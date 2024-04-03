@@ -6,6 +6,7 @@
 		<title>Join (WebRTC via QR example)</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 		<link rel="icon" href="/favicon.ico"/>
+		<link rel="stylesheet" href="./style.css"/>
 		<!-- Example script -->
 		<script type="module">
 			import { UserConnection } from "../"	// from "webrtc-via-qr"
@@ -26,6 +27,8 @@
 				let u = new UserConnection()
 				u.acceptInvite(inviteCode)
 					.then(accept => QRCode.toCanvas(qr, accept))
+
+				// Same as host.html (Todo: DRY)
 				// Connection successful
 				u.on("connect", () => {
 					dialog.close()
@@ -34,8 +37,18 @@
 					appendMessage(`Connected successfuly @ ${Date.now()}`)
 				})
 				// Show incoming messages
-				u.on("message", (user, msg) => {
-					appendMessage(`${user}: ${msg}`)
+				u.on("message", (msg) => {
+					msg = JSON.parse(msg)
+					appendMessage(`${msg.user}: ${msg.text}`)
+				})
+				// Add ability to send messages
+				send.addEventListener("click", () => {
+					appendMessage(`Me: ${chat.value}`)
+					u.sendChannel.send(JSON.stringify({
+						user: "Joinee",
+						text: chat.value
+					}))
+					chat.value = ""
 				})
 			} else {
 				dialog.close()
@@ -43,26 +56,7 @@
 			}
 		</script>
 		<style>
-			body {
-				display: grid;
-			}
-			p {
-				margin: 0px;
-			}
-			#dialog {
-				align-self: center;
-			}
-			#qr {
-				max-width: 80vw;
-				max-height: 80vw;
-			}
-			#messages {
-				margin-top: 1rem;
-				padding: 1rem;
-				height: 70vh;
-				overflow: auto scroll;
-				border: 1px solid black;
-			}
+			
 		</style>
 	</head>
 	<body>
@@ -71,7 +65,10 @@
 			<canvas id="qr"/>
 		</dialog>
 		<h1>Join</h1>
-		<input type="text" id="chat" placeholder="Not connected" disabled/>
+		<div>
+			<input type="text" id="chat" placeholder="Not connected" disabled/>
+			<button id="send">Send</button>
+		</div>
 		<div id="messages">
 			<p>Connecting...</p>
 		</div>

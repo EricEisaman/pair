@@ -6,8 +6,7 @@
 		<title>Host (WebRTC via QR example)</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 		<link rel="icon" href="/favicon.ico"/>
-		<!-- Petite Vue -->
-		<script src="https://unpkg.com/petite-vue@0.4.1/dist/petite-vue.iife.js" defer></script>
+		<link rel="stylesheet" href="./style.css"/>
 		<!-- Example script -->
 		<script type="module">
 			import { HostConnection } from "../"	// from "webrtc-via-qr"
@@ -15,24 +14,43 @@
 			import jsQR from "jsqr"
 
 			let h = new HostConnection()
-			h.on("connect", (con, rec_channel) => {
-				console.log(con, rec_channel)
-				con.sendChannel.send("from host: connection established")
-			})
-			h.on("message", (con, msg) => console.log(msg))
 
-			h.createInvite()
-				.then(invite => {
-					window.inv.textContent = invite
-					QRCode.toCanvas(window.qr, "http://192.168.0.154:5173/example/join.html?invite=" + invite)
-				})
+			// Buttons
+			inviteButton.addEventListener("click", () => {
+				h.createInvite()
+					.then(invite => {
+						inviteDialog.showModal()
+						QRCode.toCanvas(qr, "http://192.168.0.154:5173/example/join.html?invite=" + invite)
+					})
+			})
+
+			acceptButton.addEventListener("click", () => {
+				acceptDialog.showModal()
+				startScanning()
+			})
+
+			closeInviteButton.addEventListener("click", () => {
+				inviteDialog.close()
+			})
 			
-			let streamRefForClosing, running
-			function startScanning(canvas) {
-				console.log("Starting scan")
+			closeAcceptButton.addEventListener("click", () => {
+				stopScanning()
+				acceptDialog.close()
+			})
+
+			// Shortcut
+			function appendMessage(msg) {
+				let p = document.createElement("p")
+				p.textContent = msg
+				messages.appendChild(p)
+			}
+			
+			// Scanning
+			let streamRefForClosing, running	// Running is only required in Firefox when requestAnimationFrame() is used
+			function startScanning() {
 				running = true
 				const video = document.createElement("video")
-				const ctx = canvas.getContext("2d")
+				const ctx = scan.getContext("2d")
 				ctx.willReadFrequently = true	// Use GPU memory
 
 				window.navigator.mediaDevices.getUserMedia({video:{facingMode:"environment", frameRate:{ideal: 10}}})	// Limited FPS for now
@@ -46,13 +64,36 @@
 				
 				function tick() {
 					if (video.readyState === video.HAVE_ENOUGH_DATA) {
-						ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+						ctx.drawImage(video, 0, 0, scan.width, scan.height)
 						// Actual scanning
-						const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height)
+						const pixels = ctx.getImageData(0, 0, scan.width, scan.height)
 						const code = jsQR(pixels.data, pixels.width, pixels.height, {inversionAttempts: "dontInvert"})
 						if (code) {
 							h.confirmAccept(code.data)
-							running = false
+							stopScanning()
+
+							// Same as join.html (Todo: DRY)
+							// Connection successful
+							h.on("connect", () => {
+								acceptDialog.close()
+								chat.setAttribute("placeholder", "Enter message")
+								chat.removeAttribute("disabled")
+								appendMessage(`Connected successfuly @ ${Date.now()}`)
+							})
+							// Show incoming messages
+							h.on("message", (msg) => {
+								msg = JSON.parse(msg)
+								appendMessage(`${msg.user}: ${msg.text}`)
+							})
+							// Add ability to send messages
+							send.addEventListener("click", () => {
+								appendMessage(`Me: ${chat.value}`)
+								h.sendChannel.send(JSON.stringify({
+									user: "Host",
+									text: chat.value
+								}))
+								chat.value = ""
+							})
 						}
 					}
 					if (running) {
@@ -62,31 +103,36 @@
 				}
 			}
 
-			function stopScanning(canvas) {
-				console.log("Stopping scan")
-				streamRefForClosing.getTracks().forEach(track => track.stop())
-				running = false
+			function stopScanning() {
+				if (running) {
+					streamRefForClosing.getTracks().forEach(track => track.stop())
+					running = false
+				}
 			}
-
-			// PetiteVue Init
-			PetiteVue.createApp({
-				inviting: true,
-				scanning: false,
-				startScanning,
-				stopScanning
-			}).mount(document.body)
 		</script>
 	</head>
 	<body>
-		<p>Host</p>
-		<button @click="inviting=!inviting">{{inviting ? "Accept" : "Create"}} invite</button>
-		<div v-show="inviting">
-			<p id="inv"></p>
+		<dialog id="inviteDialog">
+			<h2>Scanned by joinee</h2>
 			<canvas id="qr" style="max-width:300px;max-height:300px"></canvas>
+			<button id="closeInviteButton">Close</button>
+		</dialog>
+		<dialog id="acceptDialog">
+			<h2>Scan accept code</h2>
+			<canvas id="scan" width="640" height="360"></canvas>
+			<button id="closeAcceptButton">Stop scanning</button>
+		</dialog>
+		<h1>Host</h1>
+		<div>
+			<button id="inviteButton">Create invite</button>
+			<button id="acceptButton">Accept confirm</button>
 		</div>
-		<div v-show="!inviting">
-			<button @click="scanning=!scanning">Toggle scanning</button><br>
-			<canvas id="scan" width="640" height="360" v-if="scanning" @vue:mounted="startScanning($el)" @vue:unmounted="stopScanning($el)"></canvas>
+		<div>
+			<input type="text" id="chat" placeholder="Not connected" disabled/>
+			<button id="send">Send</button>
+		</div>
+		<div id="messages">
+			<p>Connecting...</p>
 		</div>
 	</body>
 </html>
