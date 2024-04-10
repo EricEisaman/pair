@@ -12,7 +12,7 @@
 			import { UserConnection } from "../"	// from "webrtc-via-qr"
 			import QRCode from "qrcode"
 
-			// Shortcut
+			// Helper shortcut
 			function appendMessage(msg) {
 				let p = document.createElement("p")
 				p.textContent = msg
@@ -23,33 +23,39 @@
 			let params = new URLSearchParams(window.location.search)
 			let inviteCode = params.get("invite")
 			if (typeof inviteCode === "string" && inviteCode.length > 0) {
-				// Respond to invite
+				// Create connection
 				let u = new UserConnection()
-				u.acceptInvite(inviteCode)
-					.then(accept => QRCode.toCanvas(qr, accept))
-
-				// Same as host.html (Todo: DRY)
-				// Connection successful
-				u.on("connect", () => {
+				let sendChannel = u.createDataChannel("fromuser")
+				let receiveChannel
+	
+				// Setup listeners
+				u.addEventListener("datachannel", e => {
+					// Todo: DRY - same as host.html
+					// Connection successful: Channel established
+					receiveChannel = e.channel
+					receiveChannel.addEventListener("message", e => {
+						let msg = JSON.parse(e.data)
+						appendMessage(`${msg.user}: ${msg.text}`)
+					})
+					// Enable Messaging
 					dialog.close()
 					chat.setAttribute("placeholder", "Enter message")
 					chat.removeAttribute("disabled")
 					appendMessage(`Connected successfuly @ ${Date.now()}`)
+					// Add ability to send messages
+					send.addEventListener("click", () => {
+						appendMessage(`Me: ${chat.value}`)
+						sendChannel.send(JSON.stringify({
+							user: "Joinee",
+							text: chat.value
+						}))
+						chat.value = ""
+					})
 				})
-				// Show incoming messages
-				u.on("message", (msg) => {
-					msg = JSON.parse(msg)
-					appendMessage(`${msg.user}: ${msg.text}`)
-				})
-				// Add ability to send messages
-				send.addEventListener("click", () => {
-					appendMessage(`Me: ${chat.value}`)
-					u.sendChannel.send(JSON.stringify({
-						user: "Joinee",
-						text: chat.value
-					}))
-					chat.value = ""
-				})
+	
+				// Respond to invite
+				u.acceptInvite(inviteCode)
+					.then(accept => QRCode.toCanvas(qr, accept))
 			} else {
 				dialog.close()
 				appendMessage("Connection failed: Param 'invite' was not included in URL (open this page from QR code!)")
