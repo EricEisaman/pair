@@ -13,7 +13,21 @@
 			import QRCode from "qrcode"
 			import jsQR from "jsqr"
 
-			// Helper shortcut
+			// Config
+			const CAMERA_CONSTRAINTS = {
+				video: {
+					facingMode: "environment",
+					frameRate: {
+						ideal: 10	// Limited FPS for now
+					}
+				}
+			}
+
+			// Helper shortcuts
+			function isFirefox() {
+				return navigator.userAgent.includes("Firefox")
+			}
+
 			function appendMessage(msg) {
 				let p = document.createElement("p")
 				p.textContent = msg
@@ -74,26 +88,20 @@
 			})
 			
 			// Scanning
-			let streamRefForClosing, running	// Running is only required in Firefox when requestAnimationFrame() is used
-			function startScanning() {
-				running = true
-				const video = document.createElement("video")
-				const ctx = scan.getContext("2d")
-				ctx.willReadFrequently = true	// Use GPU memory
+			function stopScanning() {}	// Doesn't need to do anything if not scanning yet
 
-				window.navigator.mediaDevices.getUserMedia({video:{facingMode:"environment", frameRate:{ideal: 10}}})	// Limited FPS for now
-					.then(stream => {
-						streamRefForClosing = stream
-						video.srcObject = stream
-						video.play()
-						video.requestVideoFrameCallback(tick)	// Not working in Firefox!
-						// requestAnimationFrame(tick)
-					})
+			function startScanning() {
+				const video = document.createElement("video")
+				const ctx = scan.getContext("2d", {
+					willReadFrequently: true
+				})
 				
 				function tick() {
-					if (video.readyState === video.HAVE_ENOUGH_DATA) {
+					// Only scan if new video frame available
+					if (video.readyState == video.HAVE_ENOUGH_DATA) {
+						// Draw frame to canvas
 						ctx.drawImage(video, 0, 0, scan.width, scan.height)
-						// Actual scanning
+						// Scan frame for QR
 						const pixels = ctx.getImageData(0, 0, scan.width, scan.height)
 						const code = jsQR(pixels.data, pixels.width, pixels.height, {inversionAttempts: "dontInvert"})
 						if (code) {
@@ -101,25 +109,39 @@
 							stopScanning()
 						}
 					}
-					if (running) {
-						video.requestVideoFrameCallback(tick)	// Not working in Firefox!
-						// requestAnimationFrame(tick)
+					// Keep looping
+					if (!video.paused) {
+						video.requestVideoFrameCallback(tick)
 					}
 				}
-			}
 
-			function stopScanning() {
-				if (running) {
-					streamRefForClosing.getTracks().forEach(track => track.stop())
-					running = false
-				}
+				// Setup camera stream
+				window.navigator.mediaDevices.getUserMedia(CAMERA_CONSTRAINTS)
+					.then(stream => {
+						video.srcObject = stream
+						video.play()
+						// Implement stopping
+						stopScanning = function() {
+							video.pause()
+							stream.getTracks().forEach(track => track.stop())
+						}
+						// Start scan-loop
+						// HACK: requestVideoFrameCallback isn't implemented in Firefox
+						if (isFirefox()) {
+							video.requestVideoFrameCallback = function(tick) {
+								window.requestAnimationFrame(tick)
+							}
+						}
+						// HACK END
+						video.requestVideoFrameCallback(tick)
+					})
 			}
 		</script>
 	</head>
 	<body>
 		<dialog id="inviteDialog">
 			<h2>Scanned by joinee</h2>
-			<canvas id="qr" style="max-width:300px;max-height:300px"></canvas>
+			<canvas id="qr"></canvas>
 			<button id="closeInviteButton">Close</button>
 		</dialog>
 		<dialog id="acceptDialog">
