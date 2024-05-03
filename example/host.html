@@ -17,8 +17,10 @@
 				video: {
 					facingMode: "environment",
 					frameRate: {
-						ideal: 10	// Limited FPS for now
-					}
+						min: 10,
+						max: 60
+					},
+					aspectRatio: 1
 				}
 			}
 
@@ -67,24 +69,21 @@
 			inviteButton.addEventListener("click", () => {
 				h.createInvite()
 					.then(invite => {
-						inviteDialog.showModal()
+						dialog.showModal()
+						qr.getContext("2d", {willReadFrequently: true})	// Set context attribute *before* first draw (required later in scan)
 						QRCode.toCanvas(qr, "http://192.168.0.154:5173/example/join.html?invite=" + invite)
 					})
 			})
 
-			acceptButton.addEventListener("click", () => {
-				inviteDialog.close()
-				acceptDialog.showModal()
+			scanButton.addEventListener("click", () => {
+				h2.textContent = "Scan accept code"
+				scanButton.setAttribute("disabled", true)
 				startScanning()
 			})
 
-			closeInviteButton.addEventListener("click", () => {
-				inviteDialog.close()
-			})
-			
-			closeAcceptButton.addEventListener("click", () => {
+			closeButton.addEventListener("click", () => {
 				stopScanning()
-				acceptDialog.close()
+				dialog.close()
 			})
 			
 			// Scanning
@@ -92,7 +91,7 @@
 
 			function startScanning() {
 				const video = document.createElement("video")
-				const ctx = scan.getContext("2d", {
+				const ctx = qr.getContext("2d", {
 					willReadFrequently: true
 				})
 				
@@ -100,9 +99,9 @@
 					// Only scan if new video frame available
 					if (video.readyState == video.HAVE_ENOUGH_DATA) {
 						// Draw frame to canvas
-						ctx.drawImage(video, 0, 0, scan.width, scan.height)
+						ctx.drawImage(video, 0, 0, qr.width, qr.height)
 						// Scan frame for QR
-						const pixels = ctx.getImageData(0, 0, scan.width, scan.height)
+						const pixels = ctx.getImageData(0, 0, qr.width, qr.height)
 						const code = jsQR(pixels.data, pixels.width, pixels.height, {inversionAttempts: "dontInvert"})
 						if (code) {
 							h.confirmAccept(code.data)
@@ -139,16 +138,11 @@
 		</script>
 	</head>
 	<body>
-		<dialog id="inviteDialog">
-			<h2>Scanned by joinee</h2>
+		<dialog id="dialog">
+			<h2 id="h2">Scanned by joinee</h2>
 			<canvas id="qr"></canvas>
-			<button id="acceptButton">Scan accept</button>
-			<button id="closeInviteButton">Close</button>
-		</dialog>
-		<dialog id="acceptDialog">
-			<h2>Scan accept code</h2>
-			<canvas id="scan" width="640" height="360"></canvas>
-			<button id="closeAcceptButton">Stop scanning</button>
+			<button id="scanButton">Scan accept</button>
+			<button id="closeButton">Close</button>
 		</dialog>
 		<h1>Host</h1>
 		<button id="inviteButton">Create invite</button>

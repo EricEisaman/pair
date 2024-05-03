@@ -10,9 +10,11 @@ dialog {
 	align-self: center;
 }
 
-#qr {
+canvas {
+	display: block;
 	max-width: 80vw;
 	max-height: 80vw;
+	margin-block: 0.5rem;
 }
 
 #messages {
