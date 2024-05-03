@@ -1,21 +1,12 @@
 # WebRTC via QR
 Establish a WebRTC connection without requiring a signalling server (like TURN- or dedicated server). Instead, initial signalling is achieved by scanning QR codes in person.
 
-## WIP
-Don't use this yet - there are no tests, no error handling and functionality might change!!!
+**WIP Don't use this yet - there are no tests, no error handling and functionality might change!!!**
 
 ## Motivation
 Intended for local games. Setting up a WebRTC connection requires some way of exchanging description- and candidate-data between clients ("signalling"). Usually this is achieved by paying for a TURN server or hosting a dedicated server yourself. However, since everyone is available in-person anyway, the signalling might as well be done via some local exchange - in this case by scanning QR codes.
 
-## Inspiration
-Several other repos already use this mechanism:
-- [serverless-webrtc-qrcode](https://github.com/fta2012/serverless-webrtc-qrcode)
-- [webrtc-qr](https://github.com/AquiGorka/webrtc-qr)
-- [webrtc-qr-signaling-channel](https://github.com/TomasHubelbauer/webrtc-qr-signaling-channel)
-
-However they only provide proof of concept and not a simple package anyone can use.
-
-## Connection flow
+## Flow
 1. Host creates invite as QR code
 2. Joinee scans invite, which creates accept as QR code
 3. Host scans accept
@@ -24,7 +15,7 @@ However they only provide proof of concept and not a simple package anyone can u
 ## Example
 Check out the [example](https://qivex.github.io/webrtc-via-qr/example/host.html). It requires two devices with a camera to scan the QR codes. When the connection is established you can chat via a `RTCDataChannel`.
 
-## Usage
+## Installation
 Download using NPM:
 ```
 npm install webrtc-via-qr
@@ -34,7 +25,7 @@ Embed using [esm.run](https://esm.run):
 import { HostConnection, UserConnection } from "https://esm.run/webrtc-via-qr"
 ```
 
-## API
+## Usage
 The module exposes two classes:
 ```js
 class HostConnection extends RTCPeerConnection
@@ -44,7 +35,7 @@ Both are subclasses of [RTCPeerConnection](https://developer.mozilla.org/en-US/d
 
 The `config` parameter of the [constructor](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/RTCPeerConnection#configuration) of these subclasses includes one additional optional value: `gatheringTimeout`. It defines the upper time limit for the (now hidden) candidate gathering phase in ms and defaults to 1000. Only touch this if the QR code generation fails with no candidates.
 
-Now onto the actual connection process, which is asymmetrical. The peer trying to connect uses a `HostConnection`, the responding peer uses a `UserConnection`. Without this module both sides have to use a `RTCPeerConnection`, but call different methods (which can be confusing).
+Now onto the actual connection process, which is asymmetrical. The peer trying to connect uses a `HostConnection`, the responding peer uses a `UserConnection`.
 
 ### Host
 ```js
@@ -64,7 +55,7 @@ h.confirmAccept(acceptCode)
 let u = new UserConnection(config)
 // Step 4
 u.addEventListener("connectionstatechange", event => {
-	if (h.connectionState === "connected") console.log("connected")
+	if (u.connectionState === "connected") console.log("connected")
 })
 // Step 2
 const acceptCode = await u.acceptInvite(inviteCode)
@@ -76,3 +67,11 @@ Both of these codes `inviteCode` & `acceptCode` are Strings! The encoding to & d
 - Topology. Connecting everyone with everyone is infeasable when each connection is initialized by hand. A star topology with a dedicated host-player solves this (but requires additional logic not implemented here).
 - Capacity. QR codes can be too small to contain all data. Either some candidates are omitted or multiple codes must be scanned.
 - Tight timeout. Some browsers fail the connection on purpose after a set amount of time, making manual exchange unnecessary difficult. Firefox only allows 5 secondy by default (customizable at `media.peerconnection.ice.trickle_grace_period`)
+
+## Inspiration
+Several other repos already use this mechanism:
+- [serverless-webrtc-qrcode](https://github.com/fta2012/serverless-webrtc-qrcode)
+- [webrtc-qr](https://github.com/AquiGorka/webrtc-qr)
+- [webrtc-qr-signaling-channel](https://github.com/TomasHubelbauer/webrtc-qr-signaling-channel)
+
+However they only provide proof of concept and not a simple package anyone can use.
