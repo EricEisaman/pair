@@ -26,24 +26,49 @@ Check out the [example](https://qivex.github.io/webrtc-via-qr/example/host.html)
 
 ## Usage
 Download using NPM:
+
 `npm install webrtc-via-qr`
+
 Embed using [esm.run](https://esm.run):
+
 `import { HostConnection, UserConnection } from "https://esm.run/webrtc-via-qr"`
 
 ## API
 The module exposes two classes:
-- `let h = new HostConnection(config)`
-- `let u = new UserConnection(config)`
-These are not wrappers - both are subclasses of [RTCPeerConnection](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection), which is at the core of WebRTC. Their only purpose is to simplify the connection process. The actual RTC functionality is inherited - whether you want to add tracks or just require a simple `RTCDataChannel` is up to you.
-The `config` parameter of these classes includes one additional optional value: `gatheringTimeout`. It defines the upper time limit for the (now hidden) candidate gathering phase in ms and defaults to `1000`. Only touch this if the QR code generation fails with no candidates.
+```
+class HostConnection extends RTCPeerConnection
+class UserConnection extends RTCPeerConnection
+```
+Both are subclasses of [RTCPeerConnection](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection), which is at the core of WebRTC. Their only purpose is to simplify the connection process. The actual RTC functionality is inherited - whether you want to add tracks or just require a simple RTCDataChannel is up to you.
+
+The `config` parameter of the constructor includes one additional optional value: `gatheringTimeout`. It defines the upper time limit for the (now hidden) candidate gathering phase in ms and defaults to 1000. Only touch this if the QR code generation fails with no candidates.
+
 Now onto the actual connection process, which is asymmetrical. The peer trying to connect uses a HostConnection, the responding peer uses a UserConnection. Normally both sides just use a RTCPeerConnection, but call different methods (which can be confusing).
-1. Host creates invite as QR code
-`const inviteCode = await h.createInvite()`
-2. Joinee scans invite, which creates accept as QR code
-`const acceptCode = await u.acceptInvite(inviteCode)`
-3. Host scans accept
-`h.confirmAccept(acceptCode)`
-4. Connection will be established
+
+### Host
+```
+const h = new HostConnection(config)
+// Step 4
+h.addEventListener("connectionstatechange", event => {
+	if (h.connectionState === "connected") console.log("connected")
+})
+// Step 1
+const inviteCode = await h.createInvite()
+// Step 3
+h.confirmAccept(acceptCode)
+```
+
+### Joinee
+```
+let u = new UserConnection(config)
+// Step 4
+u.addEventListener("connectionstatechange", event => {
+	if (h.connectionState === "connected") console.log("connected")
+})
+// Step 2
+const acceptCode = await u.acceptInvite(inviteCode)
+```
+
 Both of these codes `inviteCode` & `acceptCode` are Strings! The encoding to & decoding from a QR matrix is **not included** because this should be **your choice**. QR codes can be customized in so many different ways - error levels, colors, embedded logos, rounded pixels, or even [video](https://x.com/i/status/1782342900644188171)! Including a certain en-/decoder would be considered bloat by some, while not including enough functionality for others, which is why they are excluded from the scope of this package. The [example](https://qivex.github.io/webrtc-via-qr/example/host.html) uses [qrcode](https://www.npmjs.com/package/qrcode) & [jsQR](https://www.npmjs.com/package/jsqr).
 
 ## Problems & limitations
