@@ -5,13 +5,12 @@
 		<meta charset="utf8"/>
 		<title>Host (WebRTC via QR example)</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-		<link rel="icon" href="/favicon.ico"/>
 		<link rel="stylesheet" href="./style.css"/>
 		<!-- Example script -->
 		<script type="module">
 			import { HostConnection } from "../"	// from "webrtc-via-qr"
-			import QRCode from "qrcode"
-			import jsQR from "jsqr"
+			import QRCode from "https://esm.run/qrcode@1.5.3"
+			import jsQR from "https://esm.run/jsqr@1.4.0"
 
 			// Config
 			const CAMERA_CONSTRAINTS = {
@@ -74,6 +73,7 @@
 			})
 
 			acceptButton.addEventListener("click", () => {
+				inviteDialog.close()
 				acceptDialog.showModal()
 				startScanning()
 			})
@@ -142,6 +142,7 @@
 		<dialog id="inviteDialog">
 			<h2>Scanned by joinee</h2>
 			<canvas id="qr"></canvas>
+			<button id="acceptButton">Scan accept</button>
 			<button id="closeInviteButton">Close</button>
 		</dialog>
 		<dialog id="acceptDialog">
@@ -150,10 +151,7 @@
 			<button id="closeAcceptButton">Stop scanning</button>
 		</dialog>
 		<h1>Host</h1>
-		<div>
-			<button id="inviteButton">Create invite</button>
-			<button id="acceptButton">Accept confirm</button>
-		</div>
+		<button id="inviteButton">Create invite</button>
 		<div>
 			<input type="text" id="chat" placeholder="Not connected" disabled/>
 			<button id="send">Send</button>

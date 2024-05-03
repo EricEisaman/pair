@@ -5,12 +5,11 @@
 		<meta charset="utf8"/>
 		<title>Join (WebRTC via QR example)</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-		<link rel="icon" href="/favicon.ico"/>
 		<link rel="stylesheet" href="./style.css"/>
 		<!-- Example script -->
 		<script type="module">
 			import { UserConnection } from "../"	// from "webrtc-via-qr"
-			import QRCode from "qrcode"
+			import QRCode from "https://esm.run/qrcode@1.5.3"
 
 			// Helper shortcut
 			function appendMessage(msg) {
