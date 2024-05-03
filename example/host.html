@@ -50,7 +50,7 @@
 					appendMessage(`${msg.user}: ${msg.text}`)
 				})
 				// Enable Messaging
-				acceptDialog.close()
+				dialog.close()
 				chat.setAttribute("placeholder", "Enter message")
 				chat.removeAttribute("disabled")
 				appendMessage(`Connected successfuly @ ${Date.now()}`)
