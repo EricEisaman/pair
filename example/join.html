@@ -11,6 +11,13 @@
 			import { UserConnection } from "../"	// from "webrtc-via-qr"
 			import QRCode from "https://esm.run/qrcode@1.5.3"
 
+			// Config
+			const CONNECTION_CONFIG = {
+				iceServers: [
+					{urls:"stun:stun.l.google.com:19302"}
+				]
+			}
+
 			// Helper shortcut
 			function appendMessage(msg) {
 				let p = document.createElement("p")
@@ -23,13 +30,12 @@
 			let inviteCode = params.get("invite")
 			if (typeof inviteCode === "string" && inviteCode.length > 0) {
 				// Create connection
-				let u = new UserConnection()
+				let u = new UserConnection(CONNECTION_CONFIG)
 				let sendChannel = u.createDataChannel("fromuser")
 				let receiveChannel
 	
 				// Setup listeners
 				u.addEventListener("datachannel", e => {
-					// Todo: DRY - same as host.html
 					// Connection successful: Channel established
 					receiveChannel = e.channel
 					receiveChannel.addEventListener("message", e => {
