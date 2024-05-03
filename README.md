@@ -26,27 +26,28 @@ Check out the [example](https://qivex.github.io/webrtc-via-qr/example/host.html)
 
 ## Usage
 Download using NPM:
-
-`npm install webrtc-via-qr`
-
+```
+npm install webrtc-via-qr
+```
 Embed using [esm.run](https://esm.run):
-
-`import { HostConnection, UserConnection } from "https://esm.run/webrtc-via-qr"`
+```js
+import { HostConnection, UserConnection } from "https://esm.run/webrtc-via-qr"
+```
 
 ## API
 The module exposes two classes:
-```
+```js
 class HostConnection extends RTCPeerConnection
 class UserConnection extends RTCPeerConnection
 ```
-Both are subclasses of [RTCPeerConnection](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection), which is at the core of WebRTC. Their only purpose is to simplify the connection process. The actual RTC functionality is inherited - whether you want to add tracks or just require a simple RTCDataChannel is up to you.
+Both are subclasses of [RTCPeerConnection](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection), which is at the core of WebRTC. Their only purpose is to simplify the connection process. The actual RTC functionality is inherited - whether you want to add tracks or just require a simple RTCDataChannel.
 
-The `config` parameter of the constructor includes one additional optional value: `gatheringTimeout`. It defines the upper time limit for the (now hidden) candidate gathering phase in ms and defaults to 1000. Only touch this if the QR code generation fails with no candidates.
+The `config` parameter of the [constructor](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/RTCPeerConnection#configuration) of these subclasses includes one additional optional value: `gatheringTimeout`. It defines the upper time limit for the (now hidden) candidate gathering phase in ms and defaults to 1000. Only touch this if the QR code generation fails with no candidates.
 
-Now onto the actual connection process, which is asymmetrical. The peer trying to connect uses a HostConnection, the responding peer uses a UserConnection. Normally both sides just use a RTCPeerConnection, but call different methods (which can be confusing).
+Now onto the actual connection process, which is asymmetrical. The peer trying to connect uses a `HostConnection`, the responding peer uses a `UserConnection`. Without this module both sides have to use a `RTCPeerConnection`, but call different methods (which can be confusing).
 
 ### Host
-```
+```js
 const h = new HostConnection(config)
 // Step 4
 h.addEventListener("connectionstatechange", event => {
@@ -59,7 +60,7 @@ h.confirmAccept(acceptCode)
 ```
 
 ### Joinee
-```
+```js
 let u = new UserConnection(config)
 // Step 4
 u.addEventListener("connectionstatechange", event => {
