@@ -8,7 +8,7 @@
 		<link rel="stylesheet" href="./style.css"/>
 		<!-- Example script -->
 		<script type="module">
-			import { UserConnection } from "../"	// from "webrtc-via-qr"
+			import { UserConnection } from "/lib/index.js"	// from "webrtc-via-qr"
 			import QRCode from "https://esm.run/qrcode@1.5.3"
 
 			// Config
@@ -35,14 +35,14 @@
 				let receiveChannel
 	
 				// Setup listeners
-				u.addEventListener("datachannel", e => {
+				u.addEventListener("datachannel", e => {	// Step 4
 					// Connection successful: Channel established
 					receiveChannel = e.channel
 					receiveChannel.addEventListener("message", e => {
 						let msg = JSON.parse(e.data)
 						appendMessage(`${msg.user}: ${msg.text}`)
 					})
-					// Enable Messaging
+					// Enable controls
 					dialog.close()
 					chat.setAttribute("placeholder", "Enter message")
 					chat.removeAttribute("disabled")
@@ -59,7 +59,7 @@
 				})
 	
 				// Respond to invite
-				u.acceptInvite(inviteCode)
+				u.acceptInvite(inviteCode)	// Step 2
 					.then(accept => QRCode.toCanvas(qr, accept))
 			} else {
 				dialog.close()

@@ -13,7 +13,7 @@ Intended for local games. Setting up a WebRTC connection requires some way of ex
 4. Connection will be established
 
 ## Example
-Check out the [example](https://qivex.github.io/webrtc-via-qr/example/host.html). It requires two devices with a camera to scan the QR codes. When the connection is established you can chat via a `RTCDataChannel`.
+Check out the [example](https://qivex.github.io/webrtc-via-qr/example/host.html). It requires two devices with a camera to scan the QR codes (smartphones recommended). After the connection is established you can chat via a `RTCDataChannel`.
 
 ## Installation
 Download using NPM:

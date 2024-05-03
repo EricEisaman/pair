@@ -24,3 +24,7 @@ canvas {
 	overflow: auto scroll;
 	border: 1px solid black;
 }
+
+#inviteButton {
+	margin-block-end: 0.5rem;
+}
