@@ -1,27 +1,18 @@
 {
 	"name": "webrtc-via-qr",
-	"version": "0.0.0",
+	"version": "0.0.1",
 	"description": "Establish a WebRTC connection by scanning QR codes",
 	"keywords": [
 		"webrtc",
-		"qr"
+		"qr",
+		"qrcode"
 	],
+	"license": "MIT",
+	"author": "Pascal Lamprecht",
 	"browser": "lib/index.js",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/Qivex/webrtc-via-qr.git"
-	},
-	"dependencies": {
-		"qrcode": "*",
-		"jsqr": "*",
-		"zxing-js-library": "*"
-	},
+	"repository": "github:Qivex/webrtc-via-qr",
 	"devDependencies": {
-		"vite": "*"
-	},
-	"scripts": {
-		"dev": "vite --host",
-		"build": "vite build",
-		"prev": "vite preview --host"
+		"qrcode": "1.5.3",
+		"jsqr": "1.4.0"
 	}
 }
