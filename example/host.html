@@ -48,9 +48,9 @@
 
 			// Setup listeners
 			h.addEventListener("connectionstatechange", e => {
-				dialog.close()
 				switch (h.connectionState) {
 					case "connecting":
+						dialog.close()
 						appendMessage("Connecting...")
 						break
 					case "disconnected":

@@ -36,13 +36,13 @@
 	
 				// Setup listeners
 				u.addEventListener("connectionstatechange", e => {
-					dialog.close()
 					switch (u.connectionState) {
 						case "connecting":
 							appendMessage("Connecting...")
 							break
 						case "disconnected":
 						case "failed":
+							dialog.close()
 							appendMessage("Connection failed.")
 							break
 					}
@@ -56,6 +56,7 @@
 						appendMessage(`${msg.user}: ${msg.text}`)
 					})
 					// Enable controls
+					dialog.close()
 					chat.setAttribute("placeholder", "Enter message")
 					chat.removeAttribute("disabled")
 					appendMessage(`Connected successfuly @ ${Date.now()}`)
