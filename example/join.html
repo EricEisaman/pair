@@ -35,6 +35,19 @@
 				let receiveChannel
 	
 				// Setup listeners
+				u.addEventListener("connectionstatechange", e => {
+					dialog.close()
+					switch (u.connectionState) {
+						case "connecting":
+							appendMessage("Connecting...")
+							break
+						case "disconnected":
+						case "failed":
+							appendMessage("Connection failed.")
+							break
+					}
+				})
+
 				u.addEventListener("datachannel", e => {	// Step 4
 					// Connection successful: Channel established
 					receiveChannel = e.channel
@@ -43,7 +56,6 @@
 						appendMessage(`${msg.user}: ${msg.text}`)
 					})
 					// Enable controls
-					dialog.close()
 					chat.setAttribute("placeholder", "Enter message")
 					chat.removeAttribute("disabled")
 					appendMessage(`Connected successfuly @ ${Date.now()}`)
@@ -80,8 +92,6 @@
 			<input type="text" id="chat" placeholder="Not connected" disabled/>
 			<button id="send">Send</button>
 		</div>
-		<div id="messages">
-			<p>Connecting...</p>
-		</div>
+		<div id="messages"></div>
 	</body>
 </html>

@@ -1,6 +1,6 @@
 {
 	"name": "webrtc-via-qr",
-	"version": "0.0.1",
+	"version": "0.0.3",
 	"description": "Establish a WebRTC connection by scanning QR codes",
 	"keywords": [
 		"webrtc",
