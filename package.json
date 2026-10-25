@@ -10,7 +10,7 @@
 	"license": "MIT",
 	"author": "Pascal Lamprecht",
 	"browser": "lib/index.js",
-	"repository": "github:Qivex/webrtc-via-qr",
+	"repository": "github:ericeisaman/webrtc-via-qr",
 	"devDependencies": {
 		"qrcode": "1.5.3",
 		"jsqr": "1.4.0"

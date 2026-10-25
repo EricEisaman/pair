@@ -13,7 +13,7 @@ Intended for local games. Setting up a WebRTC connection requires some way of ex
 4. Connection will be established
 
 ## Example
-Check out the [example](https://qivex.github.io/webrtc-via-qr/example/host.html). It requires two devices with a camera to scan the QR codes (smartphones recommended). After the connection is established you can chat via a `RTCDataChannel`.
+Check out the [example](https://ericeisaman.github.io/webrtc-via-qr/example/host.html). It requires two devices with a camera to scan the QR codes (smartphones recommended). After the connection is established you can chat via a `RTCDataChannel`.
 
 ## Installation
 Download using NPM:
@@ -61,7 +61,7 @@ u.addEventListener("connectionstatechange", event => {
 const acceptCode = await u.acceptInvite(inviteCode)
 ```
 
-Both of these codes `inviteCode` & `acceptCode` are Strings! The encoding to & decoding from a QR matrix is **not included** because this should be **your choice**. QR codes can be customized in so many different ways - error levels, colors, embedded logos, rounded pixels, or even [video](https://x.com/i/status/1782342900644188171)! Including a certain en-/decoder would be considered bloat by some, while not including enough functionality for others, which is why they are excluded from the scope of this package. The [example](https://qivex.github.io/webrtc-via-qr/example/host.html) uses [qrcode](https://www.npmjs.com/package/qrcode) & [jsQR](https://www.npmjs.com/package/jsqr).
+Both of these codes `inviteCode` & `acceptCode` are Strings! The encoding to & decoding from a QR matrix is **not included** because this should be **your choice**. QR codes can be customized in so many different ways - error levels, colors, embedded logos, rounded pixels, or even [video](https://x.com/i/status/1782342900644188171)! Including a certain en-/decoder would be considered bloat by some, while not including enough functionality for others, which is why they are excluded from the scope of this package. The [example](https://ericeisaman.github.io/webrtc-via-qr/example/host.html) uses [qrcode](https://www.npmjs.com/package/qrcode) & [jsQR](https://www.npmjs.com/package/jsqr).
 
 ## Problems & limitations
 - Symmetric NAT. This scenario will still require a TURN server, because there is just no way of exchanging ever-changing combinations of IP + port. This will most likely apply to peers connected by cellular network or if just one peer is behind a local router.

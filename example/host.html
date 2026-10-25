@@ -88,7 +88,7 @@
 					.then(invite => {
 						dialog.showModal()
 						qr.getContext("2d", {willReadFrequently: true})	// Set context attribute *before* first draw (required later in scan)
-						QRCode.toCanvas(qr, "https://qivex.github.io/webrtc-via-qr/example/join.html?invite=" + invite)
+						QRCode.toCanvas(qr, "https://ericeisaman.github.io/webrtc-via-qr/example/join.html?invite=" + invite)
 					})
 			})
 
