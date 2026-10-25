@@ -1,98 +1,71 @@
 <!DOCTYPE html>
-<html>
-	<head>
-		<!-- HTML boilerplate -->
-		<meta charset="utf8"/>
-		<title>Join (WebRTC via QR example)</title>
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-		<link rel="stylesheet" href="./style.css"/>
-		<!-- Example script -->
-		<script type="module">
-			import { UserConnection } from "https://esm.run/webrtc-via-qr@0.0.1"
-			import QRCode from "https://esm.run/qrcode@1.5.3"
-
-			// Config
-			const CONNECTION_CONFIG = {
-				iceServers: [
-					{urls:"stun:stun.l.google.com:19302"}
-				]
-			}
-
-			// Helper shortcut
-			function appendMessage(msg) {
-				let p = document.createElement("p")
-				p.textContent = msg
-				messages.appendChild(p)
-			}
-
-			// Assume this page was opened from QR code (= has URL param "invite")
-			let params = new URLSearchParams(window.location.search)
-			let inviteCode = params.get("invite")
-			if (typeof inviteCode === "string" && inviteCode.length > 0) {
-				// Create connection
-				let u = new UserConnection(CONNECTION_CONFIG)
-				let sendChannel = u.createDataChannel("fromuser")
-				let receiveChannel
-	
-				// Setup listeners
-				u.addEventListener("connectionstatechange", e => {
-					switch (u.connectionState) {
-						case "connecting":
-							appendMessage("Connecting...")
-							break
-						case "disconnected":
-						case "failed":
-							dialog.close()
-							appendMessage("Connection failed.")
-							break
-					}
-				})
-
-				u.addEventListener("datachannel", e => {	// Step 4
-					// Connection successful: Channel established
-					receiveChannel = e.channel
-					receiveChannel.addEventListener("message", e => {
-						let msg = JSON.parse(e.data)
-						appendMessage(`${msg.user}: ${msg.text}`)
-					})
-					// Enable controls
-					dialog.close()
-					chat.setAttribute("placeholder", "Enter message")
-					chat.removeAttribute("disabled")
-					appendMessage(`Connected successfuly @ ${Date.now()}`)
-					// Add ability to send messages
-					send.addEventListener("click", () => {
-						appendMessage(`Me: ${chat.value}`)
-						sendChannel.send(JSON.stringify({
-							user: "Joinee",
-							text: chat.value
-						}))
-						chat.value = ""
-					})
-				})
-	
-				// Respond to invite
-				u.acceptInvite(inviteCode)	// Step 2
-					.then(accept => QRCode.toCanvas(qr, accept))
-			} else {
-				dialog.close()
-				appendMessage("Connection failed: Param 'invite' was not included in URL (open this page from QR code!)")
-			}
-		</script>
-		<style>
-			
-		</style>
-	</head>
-	<body>
-		<dialog id="dialog" open>
-			<h2>Scanned by host</h2>
-			<canvas id="qr"/>
-		</dialog>
-		<h1>Join</h1>
-		<div>
-			<input type="text" id="chat" placeholder="Not connected" disabled/>
-			<button id="send">Send</button>
-		</div>
-		<div id="messages"></div>
-	</body>
-</html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+<title>Join — WebRTC via QR</title>
+<style>
+:root{--bg:#0a0a0b;--card:rgba(255,255,255,0.04);--card2:rgba(255,255,255,0.06);--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);--text:#fafafa;--muted:#a1a1aa;--muted2:#71717a;--white:#fff;--black:#0a0a0b;--input:#18181b}
+*{box-sizing:border-box}html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,Inter,SF Pro Display,Segoe UI,Roboto,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;background:radial-gradient(1200px 600px at 20% -10%, rgba(120,119,198,0.15), transparent 60%),radial-gradient(1000px 500px at 80% -20%, rgba(255,119,198,0.12), transparent 60%);pointer-events:none;z-index:-2}
+body::after{content:"";position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);background-size:32px 32px;mask-image:radial-gradient(ellipse at center, black 40%, transparent 80%);pointer-events:none;z-index:-1}
+.shell{max-width:720px;margin:0 auto;padding:32px 20px 64px}
+.eyebrow{font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2);display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.eyebrow::before{content:"";width:6px;height:6px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.15)}
+h1{font-size:34px;font-weight:650;letter-spacing:-.03em;margin:0 0 10px}
+.desc{color:var(--muted);font-size:14px;line-height:1.6;max-width:560px;margin:0 0 28px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:20px;backdrop-filter:blur(16px)}
+.card-pad{padding:20px}.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.card-label{font-size:11px;font-family:ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2)}
+.status{display:flex;align-items:center;gap:8px;font-size:11px;font-family:ui-monospace,monospace;text-transform:uppercase;color:var(--muted)}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--muted2)}
+.status-dot[data-state="creating"]{background:#f59e0b}.status-dot[data-state="waiting"]{background:#3b82f6}.status-dot[data-state="connecting"]{background:#eab308;animation:pulse 1.2s infinite}.status-dot[data-state="connected"]{background:#22c55e}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+#inviteInput{width:100%;min-height:90px;background:var(--input);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:12px;font-family:ui-monospace,monospace;font-size:11px;resize:vertical}
+#generateButton,#inviteButton{appearance:none;border:0;cursor:pointer;background:var(--white);color:var(--black);font-size:14px;font-weight:600;padding:12px 20px;border-radius:9999px;transition:transform .15s,box-shadow .15s}
+#generateButton:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(255,255,255,.12)}
+.chat-row{display:flex;gap:10px;align-items:center;margin-bottom:16px}
+#chat{flex:1;background:var(--input);color:var(--text);border:1px solid var(--border);border-radius:9999px;padding:12px 16px;outline:none}
+#send{width:44px;height:44px;border-radius:9999px;border:1px solid var(--border);background:var(--card2);color:var(--text);display:inline-flex;align-items:center;justify-content:center}
+#messages{display:flex;flex-direction:column;gap:10px;min-height:64px}
+#messages p{margin:0;padding:10px 14px;border-radius:16px;font-size:13.5px;max-width:78%;word-break:break-word}
+#messages p.me{align-self:flex-end;background:var(--white);color:var(--black);border-bottom-right-radius:6px}
+#messages p.peer{align-self:flex-start;background:rgba(255,255,255,.08);border:1px solid var(--border);border-bottom-left-radius:6px}
+#messages p.system{align-self:center;border:1px dashed var(--border);color:var(--muted2);font-size:12px;font-family:ui-monospace,monospace;padding:6px 12px;border-radius:999px}
+dialog#dialog{background:#151517;color:var(--text);border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:24px;max-width:380px;width:calc(100% - 32px);margin:auto}
+dialog#dialog::backdrop{background:rgba(0,0,0,.6);backdrop-filter:blur(12px)}
+.qr-wrap{background:#fff;padding:16px;border-radius:16px;display:flex;justify-content:center;min-height:312px}
+#qr{width:100%;max-width:280px;aspect-ratio:1;display:block;border-radius:8px}
+.dialog-actions{display:flex;gap:10px;margin-top:12px}
+#closeButton{flex:1;padding:11px 16px;border-radius:9999px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text);cursor:pointer}
+.dialog-hint{font-size:11px;color:var(--muted2);text-align:center;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-family:ui-monospace,monospace;margin-top:12px}
+.footer{margin-top:28px;display:flex;justify-content:space-between;flex-wrap:wrap;font-size:11px;color:var(--muted2);font-family:ui-monospace,monospace}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="eyebrow">WEBRTC / QR • P2P • JOIN</div>
+  <h1>Join</h1>
+  <p class="desc">Paste the invite code or open from host QR. An accept QR will be shown for the host to scan. No CDN, no external links.</p>
+  <div class="card card-pad" style="margin-bottom:16px">
+    <div class="card-header"><div class="card-label">Invite</div><div class="status"><span class="status-dot" id="statusDot" data-state="idle"></span><span id="statusText">Waiting for invite</span></div></div>
+    <p style="margin:0 0 12px;color:var(--muted);font-size:13px">If you opened from QR, it auto-detects. Otherwise paste base64 invite below.</p>
+    <textarea id="inviteInput" placeholder="Paste invite code here (base64)..."></textarea>
+    <button id="generateButton" type="button" style="margin-top:10px">Generate accept QR</button>
+    <div id="inviteStatus" style="margin-top:10px;font-size:11px;color:var(--muted2);font-family:ui-monospace,monospace"></div>
+  </div>
+  <div class="card card-pad">
+    <div class="card-header"><div class="card-label">Messages</div><div id="liveLabel" style="font-size:11px;color:var(--muted2);font-family:ui-monospace,monospace">Not connected</div></div>
+    <div class="chat-row"><input type="text" id="chat" placeholder="Not connected" disabled autocomplete="off"/><button id="send" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg></button></div>
+    <div id="messages"></div>
+  </div>
+  <div class="footer"><div>ICE: stun:stun.l.google.com:19302 • No signaling • E2E</div><div>Dark • No CDN</div></div>
+</div>
+<dialog id="dialog"><div class="dialog-inner"><h2 id="h2">Scanned by host</h2><div class="qr-wrap"><canvas id="qr" width="512" height="512"></canvas></div><div class="dialog-actions"><button id="closeButton" type="button">Close</button></div><div class="dialog-hint">Show this QR to the host to complete the handshake.</div></div></dialog>
+<script>
+// QR Generator inlined - no CDN
+(function(){var QRUtil={PATTERN_POSITION_TABLE:[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,84,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],G15:1335,G18:7973,G15_MASK:21522,getBCHTypeInfo:function(d){var e=d<<10;while(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G15)>=0)e^=(QRUtil.G15<<(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G15)));return((d<<10)|e)^QRUtil.G15_MASK},getBCHTypeNumber:function(d){var e=d<<12;while(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G18)>=0)e^=(QRUtil.G18<<(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G18)));return(d<<12)|e},getBCHDigit:function(d){var e=0;while(d!=0){e++;d>>>=1}return e},getPatternPosition:function(t,n){return QRUtil.PATTERN_POSITION_TABLE[t-1][n]},getMask:function(t,i,j){switch(t){case 0:return(i+j)%2==0;case 1:return i%2==0;case 2:return j%3==0;case 3:return(i+j)%3==0;case 4:return(Math.floor(i/2)+Math.floor(j/3))%2==0;case 5:return(i*j)%2+(i*j)%3==0;case 6:return((i*j)%2+(i*j)%3)%2==0;case 7:return((i*j)%3+(i+j)%2)%2==0;default:throw new Error("bad")}},getErrorCorrectPolynomial:function(e){var a=new QRPolynomial([1],0);for(var i=0;i<e;i++)a=a.multiply(new QRPolynomial([1,QRMath.gexp(i)],0));return a},getLengthInBits:function(t,e){return e<10?8:16},getLostPoint:function(t){var n=t.getModuleCount(),e=0;for(var r=0;r<n;r++)for(var o=0;o<n;o++){var l=0,s=t.isDark(r,o);for(var u=-1;u<=1;u++)if(!(r+u<0||n<=r+u))for(var a=-1;a<=1;a++)if(!(o+a<0||n<=o+a)&&(u!=0||a!=0)&&s==t.isDark(r+u,o+a))l++;l>5&&(e+=3+l-5)}for(var r=0;r<n-1;r++)for(var o=0;o<n-1;o++){var c=0;t.isDark(r,o)&&c++;t.isDark(r+1,o)&&c++;t.isDark(r,o+1)&&c++;t.isDark(r+1,o+1)&&c++;(c==0||c==4)&&(e+=3)}for(var r=0;r<n;r++)for(var o=0;o<n-6;o++)t.isDark(r,o)&&!t.isDark(r,o+1)&&t.isDark(r,o+2)&&t.isDark(r,o+3)&&t.isDark(r,o+4)&&!t.isDark(r,o+5)&&t.isDark(r,o+6)&&(e+=40);for(var o=0;o<n;o++)for(var r=0;r<n-6;r++)t.isDark(r,o)&&!t.isDark(r+1,o)&&t.isDark(r+2,o)&&t.isDark(r+3,o)&&t.isDark(r+4,o)&&!t.isDark(r+5,o)&&t.isDark(r+6,o)&&(e+=40);var h=0;for(var o=0;o<n;o++)for(var r=0;r<n;r++)t.isDark(r,o)&&h++;return e+10*Math.abs(100*h/n/n-50)/5}};
+var QRMath={glog:function(n){return QRMath.LOG_TABLE[n]},gexp:function(n){while(n<0)n+=255;while(n>=256)n-=255;return QRMath.EXP_TABLE[n]},EXP_TABLE:new Array(256),LOG_TABLE:new Array(256)};for(var i=0;i<8;i++)QRMath.EXP_TABLE[i]=1<<i;for(var i=8;i<256;i++)QRMath.EXP_TABLE[i]=QRMath.EXP_TABLE[i-4]^QRMath.EXP_TABLE[i-5]^QRMath.EXP_TABLE[i-6]^QRMath.EXP_TABLE[i-8];for(var i=0;i<255;i++)QRMath.LOG_TABLE[QRMath.EXP_TABLE[i]]=i;
+function QRPolynomial(num,shift){var o=0;while(o<num.length&&num[o]==0)o++;this.num=new Array(num.length-o+shift);for(var i=0;i<num.length-o;i++)this.num[i]=num[i+o]}
+QRPolynomial.prototype={get:function(i){return this.num[i]},getLength:function(){return this.num.length},multiply:function(e){var n=new Array(this.getLength()+e.getLength()-1);for(var i=0;i<this.getLength();i++)for(var j=0;j<e.getLength();j++)n[i+j]^=QRMath.gexp(QRMath.glog(this.get(i))+QRMath.glog(e.get(j)));return new QRPolynomial(n,0)},mod:function(e){if(this.getLength()-e.getLength()<0)return this;var r=QRMath.glog(this.get(0))-QRMath.glog(e.get(0)),n=new Array(this.getLength());for(var i=0;i<this.getLength();i++)n[i]=this.get(i);for(var i=0;i<e.getLength();i++)n[i]^=QRMath.gexp(QRMath.glog(e.get(i))+r);return new QRPolynomial(n
