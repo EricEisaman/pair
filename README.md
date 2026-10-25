@@ -113,6 +113,14 @@ Both sides can work without camera:
 - `file:///host.html` → relative `join.html?invite=...` links, Same Room mode recommended, works airplane mode
 - `https://ericeisaman.github.io/pair/example/host.html` (demo, keep dammit) and `https://ericeisaman.github.io/pair/example/host.html` → absolute links, both modes work, Internet mode adds STUN
 
+### 11) Mom's symmetrical — same page, AES creds only e.k (NEW primary)
+Both know the site `host.html`. No URL sharing needed.
+- A creates offer → copies `e.k` (dot in middle) + QR for `e.k`
+- B goes to same page → Section 2 Paste Offer → pastes `e.k` (or `e` + `k` fields or full URL) → Generate Accept → copies its own `e.k`
+- A → Section 3 Paste Accept → pastes B's `e.k` → Connect
+- Both pages identical — `host.html` == `join.html` now. Offer and answer both AES encrypted.
+- Fixes: dec() handles base64url, clear error if only e pasted.
+
 Every scenario ends the same: `Connected successfully @ timestamp`, `Live`, dataChannel chat.
 
 ---
@@ -156,7 +164,7 @@ Demo (keep dammit): https://ericeisaman.github.io/pair/example/host.html
 
 ## how it works
 
-Host
+Host (now symmetrical — can also act as joiner)
 1. mode = same-room ? {iceServers:[]} : {iceServers:[{urls:"stun:stun.l.google.com:19302"}]}
 2. pc = new RTCPeerConnection(mode)
 3. sendCh = pc.createDataChannel('fromhost')
@@ -166,24 +174,31 @@ Host
    plainUrl = join.html?invite= + encodeURIComponent(invite)
    encrypted: key=generateKey AES-GCM 256, iv=random 12, ct=encrypt(JSON.stringify(offer)), e=b64url(iv+ct), k=b64url(key)
    encUrl = join.html?e= + e + #k= + k
-   drawQRToCanvas(qr, plainUrl) + drawQRToCanvas(qrEnc, encUrl)
-   localStorage.setItem('webrtc-qr-last-offer', JSON.stringify(pc.localDescription))
+   credsOnly = e + '.' + k  (Mom's short form, QR for e.k)
+   drawQRToCanvas(qr, plainUrl) + drawQRToCanvas(qrEnc, encUrl) + drawQRToCanvas(qrCreds, credsOnly)
+   saveOffer() → localStorage + sessionStorage {offer, mode, ts}
+7. Can also paste offer (any format) in Section 2 → createAnswerFromAny() → answer + encrypt answer to e.k too
 
-Join
-1. parse location: if ?e= && (#k= or ?k=) → decryptOfferJson(e,k) → remoteDesc
-   else if ?invite= → remoteDesc = JSON.parse(atob(invite))
-   else manual paste
+Join (now identical to Host — symmetrical)
+1. parse location: if ?e= && (#k= or ?k=) → decryptJson(e,k) → remoteDesc
+   else if ?invite= → remoteDesc = JSON.parse(atob(invite) with base64url fallback)
+   else manual paste Section 2: accepts plain, ?invite= URL, ?e=...#k=... URL, e.k, e + k fields, JSON {e,k}
 2. pc = new RTCPeerConnection(mode)
 3. sendCh = pc.createDataChannel('fromuser')
 4. await pc.setRemoteDescription(remoteDesc)
 5. answer = await pc.createAnswer(); await pc.setLocalDescription(answer)
 6. wait gathering → accept = btoa(JSON.stringify(pc.localDescription))
    hostUrl = host.html?accept= + encodeURIComponent(accept)
-   QR + link
+   acceptEnc: encryptJson(accept) → e2,k2 → e2.k2 + QR
+   QR + link + credsOnly
 
 Connect
-- Host: scan accept QR OR open host.html?accept=... OR paste into manual box → extractAccept() → setRemoteDescription()
-- If pc null on host with ?accept=, restorePcFromStoredOffer() from localStorage
+- Host: Section 3 Paste Accept — accepts plain accept, ?accept= URL, e.k creds, e + k fields, JSON
+  - scan accept QR OR open host.html?accept=... OR paste into manual box OR paste e.k → extractAccept() / parseAesCreds() / decryptJson() → setRemoteDescription()
+- If pc null on host with ?accept=, restorePcFromStoredOffer() from localStorage (restores mode too)
+- Pending accept: if ?accept= opened in new tab before offer exists, saved to pending-accept and auto-applied after Create invite
+- dec() now handles both base64 and base64url (fixes InvalidCharacterError when pasting e)
+- isProbablyEOnly() detects pasting only e without k and shows helpful message
 - connectionState: connecting → connected → dataChannel.onmessage
 
 QR lib: Kazuhiko Arase MIT inlined. No CDN. BarcodeDetector for scanning with manual fallback. AES via Web Crypto subtle.
@@ -197,6 +212,7 @@ QR lib: Kazuhiko Arase MIT inlined. No CDN. BarcodeDetector for scanning with ma
 - **Internet Plain Link:** Host Internet → Create → Copy plain link → Send → Joiner opens → Joiner accept link → Host opens accept link
 - **Internet AES Link:** Host Internet → Create → Copy Enc link `?e=...#k=...` → Send → Joiner auto-decrypts → accept link back
 - **Manual Only:** No camera → copy/paste invite and accept as text
+- **Mom's Symmetrical AES creds e.k (NEW primary):** Both go to same page `host.html` → A Create → copy `e.k` → B Section 2 Paste Offer `e.k` → Generate Accept → copy its `e.k` → A Section 3 Paste Accept `e.k` → Connect. No URL needed, same page, both roles.
 
 All end with:
 
@@ -246,3 +262,58 @@ Only stun: protocol remains in Internet mode. Same-room mode: zero network.
 
 QR generator MIT Kazuhiko Arase — inlined.
 WebRTC + AES toggle code — public domain, local only. Demo link stays: https://ericeisaman.github.io/pair/example/host.html
+
+
+---
+
+## Mom's symmetrical scenario — AES creds only, same page you know (NEW + FIXED)
+
+> Mom said: users should just be able to exchange the AES encoded ICE candidate credentials since they may already know the site to get the chat page from.
+
+This is now the primary flow and the pages are **identical** — `host.html` and `join.html` do the same thing, both can create offer or answer.
+
+**Both know the site:** `https://ericeisaman.github.io/pair/example/host.html` — no need to share full URL.
+
+1. Person A → host.html → Mode: Same Room or Internet → **Create invite** (Section 1)
+   - Dialog shows:
+     - Plain link `.../join.html?invite=...`
+     - AES link `.../join.html?e=...#k=...`
+     - **Mom's creds only:** `e`, `k`, and combined `e.k` + QR for `e.k` — short, no URL needed
+   - Shows QR of `e.k`. Person B in same room scans or copies `e.k`.
+
+2. Person B → **same page they know** → Section 2 **Paste Offer (Invite) — I am Joiner**
+   - Pastes any format into big textarea OR `e` + `k` fields:
+     - `?invite=` URL, raw base64 invite, `?e=...#k=...` URL, `e.k` (with dot), `e k` (space), JSON `{"e":...,"k":...}`
+   - Click **Generate Accept from Offer**
+   - Generates answer, **also encrypts answer with AES-GCM** (symmetrical)
+   - Dialog **Accept — Answer** shows:
+     - Plain accept `host.html?accept=...`
+     - AES link `host.html?e=...#k=...`
+     - Creds only: accept `e`, `k`, `e.k` + QR for `e.k`
+
+3. Person A → Section 3 **Paste Accept (Answer) — I am Host** on same page
+   - Pastes B's accept `e.k` (or plain or URL) into big textarea OR `e` + `k` fields
+   - Click **Connect with Accept** → `setRemoteDescription` → Connected
+
+**Why symmetrical:**
+- Same page = both roles. No host vs join confusion.
+- `e.k` is opaque, short, offline-friendly. QR / NFC / show screen.
+- Still supports all old flows: `?invite=`, `?e=...#k=...`, `?accept=`, QR scan, manual.
+
+**2026-10-25 fixes applied (your screenshot bug):**
+- `dec()` / `atob` now handles **both base64 and base64url** (`+ /` vs `- _`) with auto-padding. Previously pasting `e` (base64url) into accept box threw `InvalidCharacterError: Failed to execute 'atob'... not correctly encoded`.
+- `parseAesCreds()` now strips whitespace/newlines, handles `e.k`, `e#k`, `?e=...&k=...`, `?e=...#k=...`, space-separated, and JSON.
+- If you paste **only `e`** (long blob with `- _`) without `k`, you now get clear error:
+  > You pasted only e (encrypted data). Need both e and k. Copy combined e.k from other phone — it has a dot in middle — or paste e and k into separate fields.
+  Instead of `Failed accept: InvalidCharacterError`.
+- `isProbablyEOnly()` detects single `e` paste and explains.
+- Offer and accept both generate AES creds — fully symmetrical.
+
+**Implementation:**
+- `encryptJson(jsonStr)` / `decryptJson(e,k)` — AES-GCM 256, 12-byte IV, `e = b64url(IV+CT)`, `k = b64url(key)` — used for both offer and answer
+- `parseAesCreds()` accepts: `?e=...#k=...`, `?e=...&k=...`, `e.k`, `e#k`, `e k`, `{"e":...,"k":...}`
+- `saveOffer()` stores offer + mode in localStorage + sessionStorage; `restorePcFromStoredOffer()` restores mode
+- Pending accept queue: if you open `host.html?accept=...` in new tab before creating offer, it saves to `localStorage.pending-accept` and auto-applies after you click Create invite
+- Both offer and answer dialogs have QR for `e.k` creds only — ideal for same-room where you know the site.
+
+This is the flow Mom approved.
