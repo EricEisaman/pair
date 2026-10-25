@@ -193,8 +193,27 @@ modeInternet.addEventListener('click', function(){setMode('internet');});
 setMode('internet');
 function setStatus(s,t){dot.dataset.state=s;st.textContent=t;}
 function addMsg(t,c){var p=document.createElement('p');p.className=c||'peer';p.textContent=t;msgs.appendChild(p);msgs.scrollTop=msgs.scrollHeight;}
+function b64ToB64Url(b64){ return b64.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+function b64UrlToB64(b64url){ var b=b64url.replace(/-/g,'+').replace(/_/g,'/'); while(b.length%4) b+='='; return b; }
 function enc(o){return btoa(JSON.stringify(o));}
-function dec(s){return JSON.parse(atob(s));}
+function dec(s){
+  s=s.trim();
+  // Handle base64url (from AES creds pasted mistakenly as plain)
+  var b64 = s.includes('-') || s.includes('_') ? b64UrlToB64(s) : s;
+  // Add padding if needed
+  while(b64.length%4) b64+='=';
+  try{
+    return JSON.parse(atob(b64));
+  }catch(e){
+    // Try base64url variant
+    try{
+      var alt = b64UrlToB64(s);
+      return JSON.parse(atob(alt));
+    }catch(e2){
+      throw e;
+    }
+  }
+}
 function bytesToB64Url(bytes){
   let binary=''; for(let i=0;i<bytes.length;i++) binary+=String.fromCharCode(bytes[i]);
   return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
@@ -225,51 +244,80 @@ async function decryptJson(eB64Url, kB64Url){
 }
 function parseAesCreds(input){
   if(!input) return null;
-  input=input.trim();
+  input=input.trim().replace(/\s+/g,'').replace(/\n/g,'').replace(/\r/g,'');
+  if(input.length<20) return null;
   // Try JSON {e,k}
   try{ var j=JSON.parse(input); if(j.e && j.k) return {e:j.e, k:j.k}; }catch(e){}
   // Try URL ?e=...#k=... or ?e=...&k=...
   try{
-    // full URL or query string
     if(input.includes('e=')){
-      var eM=input.match(/[?&]e=([^&#]+)/); var kM=input.match(/[&#?]k=([^&]+)/);
-      if(eM){ var e=decodeURIComponent(eM[1]); var k=kM?decodeURIComponent(kM[1]):null; if(e && k) return {e:e,k:k}; }
+      var eM=input.match(/[?&]e=([^&#]+)/); var kM=input.match(/[&#?\.]k=([^&]+)/);
+      // also check hash
+      if(!kM){ var hm=input.match(/#k=([^&]+)/); if(hm) kM=hm; }
+      if(!kM){ var km2=input.match(/[#&?]k=([^&\.\s]+)/); if(km2) kM=km2; }
+      if(eM){ 
+        var e=decodeURIComponent(eM[1]); 
+        var k=kM?decodeURIComponent(kM[1]):null; 
+        if(e && k) return {e:e,k:k}; 
+        // if only e found but input also has dot later, try e.k after ?
+        if(e && input.includes('.')){
+          var afterE=input.split('e=')[1];
+          if(afterE && afterE.includes('.')){
+            var ek=afterE.split('.');
+            // e is first part, k is after dot
+            var possibleK=ek[1].split('&')[0].split('#')[0];
+            if(possibleK.length>10) return {e:e, k:decodeURIComponent(possibleK)};
+          }
+        }
+      }
     }
   }catch(e){}
-  // Try hash fragment #k=
+  // Try hash fragment #k= or .k
   if(input.includes('#')){
     var parts=input.split('#');
-    // format e#k or e#k=...
     if(parts.length>=2){
       var left=parts[0]; var right=parts[1];
-      // right may be k=... or just k
-      var kVal=right; var km=right.match(/k=([^&]+)/); if(km) kVal=decodeURIComponent(km[1]); else kVal=right.replace(/^k=/,'');
-      // left may contain e=...
-      var eVal=left; var em=left.match(/e=([^&]+)/); if(em) eVal=decodeURIComponent(em[1]);
-      // if left is just e (no e=) and right is k
-      if(eVal && kVal && eVal.length>20 && kVal.length>20) return {e:eVal, k:kVal};
+      var kVal=right; var km=right.match(/k=([^&]+)/); if(km) kVal=decodeURIComponent(km[1]); else kVal=right.replace(/^k=/,'').split('&')[0];
+      var eVal=left; var em=left.match(/e=([^&#]+)/); if(em) eVal=decodeURIComponent(em[1]); else eVal=left;
+      eVal=eVal.replace(/.*\//,'').replace(/.*\?e=/,'').replace(/.*&e=/,'').trim();
+      if(eVal && kVal && eVal.length>20 && kVal.length>10) return {e:eVal, k:kVal};
     }
   }
-  // Try e.k dot separator (Mom's short creds)
+  // Try e.k dot separator - Mom's short creds - most common
   if(input.includes('.')){
-    var dotParts=input.split('.');
-    // last part is k, first part(s) is e (e may contain dots? no base64url no dot)
+    // Remove URL prefix if present
+    var clean=input;
+    // Strip up to last / or ? or =
+    clean=clean.replace(/^.*[?&]e=/,'');
+    clean=clean.replace(/^.*#k=/,'');
+    // Now clean should be e.k or e.k with extra
+    var dotParts=clean.split('.');
     if(dotParts.length>=2){
-      var kCandidate=dotParts[dotParts.length-1];
-      var eCandidate=dotParts.slice(0,-1).join('.');
-      // strip possible prefixes
-      eCandidate=eCandidate.replace(/.*e=/,'').replace(/.*:/,'').trim();
+      var kCandidate=dotParts[dotParts.length-1].split('#')[0].split('&')[0].split('?')[0].trim();
+      var eCandidate=dotParts.slice(0,-1).join('.').trim();
+      eCandidate=eCandidate.replace(/.*e=/,'').replace(/.*:/,'').replace(/k=/,'').trim();
       kCandidate=kCandidate.replace(/k=/,'').trim();
-      if(eCandidate.length>20 && kCandidate.length>10) return {e:eCandidate, k:kCandidate};
+      if(eCandidate.length>30 && kCandidate.length>20) return {e:eCandidate, k:kCandidate};
     }
   }
-  // Try space or newline separated "e k"
-  var ws=input.split(/\s+/); 
-  if(ws.length>=2 && ws[0].length>20 && ws[1].length>10){
-    // Heuristic: both look like base64url
-    return {e:ws[0].replace(/e=/,''), k:ws[1].replace(/k=/,'')};
+  // Try space separated "e k"
+  var ws=input.split(/\s+/);
+  if(ws.length>=2 && ws[0].length>30 && ws[1].length>20){
+    return {e:ws[0].replace(/e=/,'').replace(/k=/,''), k:ws[1].replace(/e=/,'').replace(/k=/,'')};
   }
+  // If input is single long base64url and looks like e only, return null to trigger helpful error (needs k)
   return null;
+}
+function isProbablyEOnly(s){
+  s=s.trim();
+  // base64url chars only, length > 100, no dot, no &
+  if(s.length>80 && !s.includes('.') && !s.includes('&') && !s.includes('#') && !s.includes('?') && !s.includes('{')){
+    // Check if it looks like base64url (alphanumeric + - _)
+    if(/^[A-Za-z0-9-_]+={0,2}$/.test(s) || /^[A-Za-z0-9-_]+$/.test(s)){
+      return true;
+    }
+  }
+  return false;
 }
 function extractInvite(input){
   input=input.trim();
@@ -390,11 +438,21 @@ async function applyAccept(acceptRaw, fromUrl){
       try{
         var jsonStr=await decryptJson(aesParsed.e, aesParsed.k);
         desc=JSON.parse(jsonStr);
-      }catch(e){ addMsg('Failed AES decrypt accept: '+e,'system'); return; }
+      }catch(e){ addMsg('Failed AES decrypt accept: '+e+' — check e and k are both pasted (e.k)','system'); return; }
     }else{
+      // Helpful error if user pasted only e
+      if(isProbablyEOnly(acceptRaw)){
+        addMsg('You pasted only e (encrypted data). Need both e and k. Copy combined e.k from other phone — it has a dot in middle — or paste e and k into separate fields.','system');
+        return;
+      }
       var acceptStr=extractAccept(acceptRaw);
-      if(!acceptStr){ addMsg('Could not parse accept','system'); return; }
-      desc=dec(acceptStr);
+      if(!acceptStr){ addMsg('Could not parse accept — paste plain accept, ?accept= URL, or AES e.k (with dot) — need both e and k','system'); return; }
+      try{
+        desc=dec(acceptStr);
+      }catch(e){
+        addMsg('Failed accept decode: '+e+' — if this is AES e.k, make sure you pasted both parts with dot. If plain, ensure correct base64.','system');
+        return;
+      }
     }
     if(!pc){
       var restored=await restorePcFromStoredOffer();
@@ -425,11 +483,15 @@ async function createAnswerFromAny(rawInvite, eVal, kVal){
   var remoteDesc=null;
   if(aesPair){
     try{ var jsonStr=await decryptJson(aesPair.e, aesPair.k); remoteDesc=JSON.parse(jsonStr); }
-    catch(e){ addMsg('Failed decrypt offer AES creds: '+e,'system'); return; }
+    catch(e){ addMsg('Failed decrypt offer AES creds: '+e+' — need both e and k as e.k','system'); return; }
   }else{
+    if(isProbablyEOnly(rawInvite)){
+      addMsg('You pasted only e. Need both e and k for AES offer. Paste e.k (with dot) or use e + k fields.','system');
+      return;
+    }
     var inviteCode=extractInvite(rawInvite);
-    if(!inviteCode){ addMsg('Could not parse invite','system'); return; }
-    try{ remoteDesc=dec(inviteCode); }catch(e){ addMsg('Failed parse invite: '+e,'system'); return; }
+    if(!inviteCode){ addMsg('Could not parse invite — paste plain invite, ?invite= URL, or AES e.k','system'); return; }
+    try{ remoteDesc=dec(inviteCode); }catch(e){ addMsg('Failed parse invite: '+e+' — if AES, need e.k with dot','system'); return; }
   }
   if(pc){try{pc.close();}catch(e){}}
   pc=new RTCPeerConnection(CONFIG);
