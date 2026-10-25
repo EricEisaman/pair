@@ -111,7 +111,7 @@ Both sides can work without camera:
 
 ### 10) File:// vs Hosted
 - `file:///host.html` → relative `join.html?invite=...` links, Same Room mode recommended, works airplane mode
-- `https://ericeisaman.github.io/pair/example/host.html` (demo, keep dammit) and `https://ericeisaman.github.io/pair/example/host.html` → absolute links, both modes work, Internet mode adds STUN
+- `https://ericeisaman.github.io/pair/example/host.html` (demo) and `https://ericeisaman.github.io/pair/example/host.html` → absolute links, both modes work, Internet mode adds STUN
 
 ### 11) Mom's symmetrical — same page, AES creds only e.k (NEW primary)
 Both know the site `host.html`. No URL sharing needed.
