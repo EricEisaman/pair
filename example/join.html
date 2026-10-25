@@ -375,9 +375,31 @@ async function restorePcFromStoredOffer(){
     lastOfferJson=stored;
     pc=new RTCPeerConnection(CONFIG);
     sendCh=pc.createDataChannel('fromhost');
-    sendCh.onopen=function(){setStatus('connected','Connected');live.textContent='Live';addMsg('Connected successfully @ '+Date.now(),'system');chat.disabled=false;};
-    pc.onconnectionstatechange=function(){st.textContent=pc.connectionState;if(pc.connectionState==='connected')setStatus('connected','Connected');};
-    pc.ondatachannel=function(e){recvCh=e.channel;recvCh.onmessage=function(ev){try{var m=JSON.parse(ev.data);addMsg(m.user+': '+m.text,'peer');}catch(_){addMsg(ev.data,'peer');}};chat.disabled=false;live.textContent='Live';};
+    sendCh.onopen=function(){
+      setStatus('connected','Connected');live.textContent='Live';addMsg('Connected successfully @ '+Date.now(),'system');
+      var c=document.getElementById('chat'); if(c){c.disabled=false; c.placeholder='Type a message...';}
+      chat.disabled=false; chat.placeholder='Type a message...';
+    };
+    sendCh.onmessage=function(ev){
+      try{var m=JSON.parse(ev.data); var txt=m.text||ev.data; addMsg(txt,'peer');}catch(_){addMsg(ev.data,'peer');}
+    };
+    pc.onconnectionstatechange=function(){
+      st.textContent=pc.connectionState;addMsg('pc connectionState: '+pc.connectionState,'system');
+      if(pc.connectionState==='connected'){
+        setStatus('connected','Connected');
+        var c=document.getElementById('chat'); if(c){c.disabled=false; c.placeholder='Type a message...';}
+        chat.disabled=false; chat.placeholder='Type a message...'; live.textContent='Live';
+      }
+    };
+    pc.ondatachannel=function(e){
+      recvCh=e.channel;
+      recvCh.onmessage=function(ev){try{var m=JSON.parse(ev.data); var txt=m.text||ev.data; addMsg(txt,'peer');}catch(_){addMsg(ev.data,'peer');}};
+      recvCh.onopen=function(){
+        var c=document.getElementById('chat'); if(c){c.disabled=false; c.placeholder='Type a message...';}
+        chat.disabled=false; chat.placeholder='Type a message...';
+      };
+      chat.disabled=false;live.textContent='Live';
+    };
     var offerDesc=JSON.parse(stored);
     await pc.setLocalDescription(offerDesc);
     await new Promise(function(r){setTimeout(r,300);});
@@ -390,20 +412,46 @@ async function createInvite(){
  if(pc){try{pc.close();}catch(e){}}
  pc=new RTCPeerConnection(CONFIG);
  sendCh=pc.createDataChannel('fromhost');
- sendCh.onopen=function(){setStatus('connected','Connected');live.textContent='Live';addMsg('DataChannel open (host) @ '+Date.now(),'system');chat.disabled=false;};
+ function handleMessage(ev, where){
+   try{
+     var m=JSON.parse(ev.data);
+     var txt=m.text || ev.data;
+     addMsg(txt,'peer');
+     console.log('recv via '+where+':',txt);
+   }catch(_){
+     addMsg(ev.data,'peer');
+     console.log('recv raw via '+where+':',ev.data);
+   }
+ }
+ sendCh.onopen=function(){
+   setStatus('connected','Connected');live.textContent='Live';addMsg('DataChannel open (host) @ '+Date.now(),'system');
+   var c=document.getElementById('chat'); if(c){c.disabled=false; c.placeholder='Type a message...'; c.focus();}
+   chat.disabled=false; chat.placeholder='Type a message...';
+   console.log('sendCh open');
+ };
+ sendCh.onmessage=function(ev){ handleMessage(ev,'host-sendCh'); };
  sendCh.onclose=function(){addMsg('DataChannel closed','system');};
  pc.onconnectionstatechange=function(){
    st.textContent=pc.connectionState;
    addMsg('pc connectionState: '+pc.connectionState,'system');
-   if(pc.connectionState==='connected'){setStatus('connected','Connected'); chat.disabled=false; live.textContent='Live';}
+   if(pc.connectionState==='connected'){
+     setStatus('connected','Connected'); chat.disabled=false; chat.placeholder='Type a message...'; live.textContent='Live';
+   }
    if(pc.connectionState==='failed'){addMsg('Connection failed — try Internet (NAT) mode (STUN) or different browsers','system'); setStatus('failed','Failed'); if(currentMode==='same-room'){addMsg('Same-room mDNS fails in same-browser tabs — switch to Internet mode','system');}}
  };
  pc.oniceconnectionstatechange=function(){addMsg('ICE: '+pc.iceConnectionState,'system');};
  pc.onicegatheringstatechange=function(){addMsg('ICE gathering: '+pc.iceGatheringState,'system');};
  pc.ondatachannel=function(e){
    recvCh=e.channel;
-   recvCh.onmessage=function(ev){try{var m=JSON.parse(ev.data);addMsg(m.user+': '+m.text,'peer');}catch(_){addMsg(ev.data,'peer');}};
-   recvCh.onopen=function(){addMsg('Remote DataChannel open @ '+Date.now(),'system'); chat.disabled=false;};
+   recvCh.onopen=function(){
+     addMsg('Remote DataChannel open @ '+Date.now(),'system');
+     var c=document.getElementById('chat'); if(c){c.disabled=false; c.placeholder='Type a message...';}
+     chat.disabled=false; chat.placeholder='Type a message...';
+   };
+   recvCh.onmessage=function(ev){
+     try{var m=JSON.parse(ev.data); var txt=m.text||ev.data; addMsg(txt,'peer'); console.log('recv via host-recvCh:',txt);}catch(_){addMsg(ev.data,'peer');}
+   };
+   recvCh.onclose=function(){addMsg('Remote DataChannel closed','system');};
  };
  const offer=await pc.createOffer();
  await pc.setLocalDescription(offer);
@@ -540,18 +588,28 @@ async function createAnswerFromAny(rawInvite, eVal, kVal){
   // Joiner does NOT create dataChannel — waits for host's channel (fixes duplicate channel bug that broke local 2-tab test)
   pc.ondatachannel=function(e){
     recvCh=e.channel;
-    recvCh.onopen=function(){setStatus('connected','Connected');live.textContent='Live';addMsg('DataChannel open (joiner) @ '+Date.now(),'system');chat.disabled=false;};
-    recvCh.onmessage=function(ev){try{var m=JSON.parse(ev.data);addMsg(m.user+': '+m.text,'peer');}catch(_){addMsg(ev.data,'peer');}};
+    recvCh.onopen=function(){
+      setStatus('connected','Connected');live.textContent='Live';addMsg('DataChannel open (joiner) @ '+Date.now(),'system');
+      var c=document.getElementById('chat'); if(c){c.disabled=false; c.placeholder='Type a message...'; c.focus();}
+      chat.disabled=false; chat.placeholder='Type a message...';
+      console.log('recvCh open joiner');
+    };
+    recvCh.onmessage=function(ev){
+      try{var m=JSON.parse(ev.data); var txt=m.text||ev.data; addMsg(txt,'peer'); console.log('recv via joiner-recvCh:',txt);}catch(_){addMsg(ev.data,'peer'); console.log('recv raw joiner:',ev.data);}
+    };
     recvCh.onclose=function(){addMsg('DataChannel closed','system');};
   };
   pc.onconnectionstatechange=function(){
     st.textContent=pc.connectionState;
     addMsg('pc connectionState: '+pc.connectionState,'system');
-    if(pc.connectionState==='connected'){setStatus('connected','Connected'); chat.disabled=false; live.textContent='Live';}
+    if(pc.connectionState==='connected'){
+      setStatus('connected','Connected');
+      var c=document.getElementById('chat'); if(c){c.disabled=false; c.placeholder='Type a message...';}
+      chat.disabled=false; chat.placeholder='Type a message...'; live.textContent='Live';
+    }
     if(pc.connectionState==='failed'){
      addMsg('Connection failed — try Internet (NAT) mode (STUN) or use 2 different browsers + Clear storage','system');
      setStatus('failed','Failed');
-     // Auto-suggest switching mode
      if(currentMode==='same-room'){
        addMsg('Hint: Same-room uses mDNS .local which fails between tabs on same machine. Switch to Internet mode and retry.','system');
      }
@@ -625,15 +683,18 @@ function setupCopy(id){
 }
 ['copyOfferE','copyOfferK','copyOfferCombined','copyAcceptE','copyAcceptK','copyAcceptCombined','copyLinkAccept','copyLinkAcceptEnc'].forEach(setupCopy);
 sendBtn.addEventListener('click', function(){
- if(!chat.value.trim())return;
- addMsg('Me: '+chat.value,'me');
- var payload=JSON.stringify({user: currentMode+'/'+(pc && pc.localDescription && pc.localDescription.type || 'Host'),text:chat.value});
+ var input=document.getElementById('chat');
+ var val=(input?input.value:chat.value).trim();
+ if(!val)return;
+ addMsg(val,'me');
+ var payload=JSON.stringify({text: val});
  try{
-   if(sendCh&&sendCh.readyState==='open') sendCh.send(payload);
-   else if(recvCh&&recvCh.readyState==='open') recvCh.send(payload);
-   else addMsg('No open DataChannel yet — wait for connected','system');
- }catch(e){addMsg('Send failed: '+e,'system');}
- chat.value='';
+   var sent=false;
+   if(sendCh&&sendCh.readyState==='open'){ sendCh.send(payload); sent=true; console.log('sent via sendCh',val); }
+   if(!sent && recvCh&&recvCh.readyState==='open'){ recvCh.send(payload); sent=true; console.log('sent via recvCh',val); }
+   if(!sent){ addMsg('No open DataChannel yet — state sendCh='+(sendCh?sendCh.readyState:'null')+' recvCh='+(recvCh?recvCh.readyState:'null'),'system'); }
+ }catch(e){addMsg('Send failed: '+e,'system'); console.error(e);}
+ if(input) input.value=''; chat.value='';
 });
 chat.addEventListener('keydown', function(e){if(e.key==='Enter'){sendBtn.click();}});
 scanBtn.addEventListener('click', async function(){
