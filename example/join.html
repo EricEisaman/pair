@@ -1,71 +1,266 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
-<title>Join — WebRTC via QR</title>
-<style>
-:root{--bg:#0a0a0b;--card:rgba(255,255,255,0.04);--card2:rgba(255,255,255,0.06);--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);--text:#fafafa;--muted:#a1a1aa;--muted2:#71717a;--white:#fff;--black:#0a0a0b;--input:#18181b}
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Join — WebRTC via QR + AES</title><style>:root{--bg:#0a0a0b;--card:rgba(255,255,255,0.04);--card2:rgba(255,255,255,0.06);--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);--text:#fafafa;--muted:#a1a1aa;--muted2:#71717a;--white:#fff;--black:#0a0a0b;--input:#18181b}
 *{box-sizing:border-box}html,body{height:100%}
-body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,Inter,SF Pro Display,Segoe UI,Roboto,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;overflow-x:hidden}
-body::before{content:"";position:fixed;inset:0;background:radial-gradient(1200px 600px at 20% -10%, rgba(120,119,198,0.15), transparent 60%),radial-gradient(1000px 500px at 80% -20%, rgba(255,119,198,0.12), transparent 60%);pointer-events:none;z-index:-2}
-body::after{content:"";position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);background-size:32px 32px;mask-image:radial-gradient(ellipse at center, black 40%, transparent 80%);pointer-events:none;z-index:-1}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,Inter,SF Pro Display,Segoe UI,Roboto,sans-serif}
 .shell{max-width:720px;margin:0 auto;padding:32px 20px 64px}
-.eyebrow{font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2);display:flex;align-items:center;gap:10px;margin-bottom:16px}
-.eyebrow::before{content:"";width:6px;height:6px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.15)}
-h1{font-size:34px;font-weight:650;letter-spacing:-.03em;margin:0 0 10px}
+.eyebrow{font-family:ui-monospace,monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted2);display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.eyebrow::before{content:"";width:6px;height:6px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,0.15)}
+h1{font-size:34px;font-weight:650;letter-spacing:-0.03em;margin:0 0 10px}
 .desc{color:var(--muted);font-size:14px;line-height:1.6;max-width:560px;margin:0 0 28px}
 .card{background:var(--card);border:1px solid var(--border);border-radius:20px;backdrop-filter:blur(16px)}
-.card-pad{padding:20px}.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-.card-label{font-size:11px;font-family:ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2)}
+.card-pad{padding:20px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.card-label{font-size:11px;font-family:ui-monospace,monospace;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted2)}
 .status{display:flex;align-items:center;gap:8px;font-size:11px;font-family:ui-monospace,monospace;text-transform:uppercase;color:var(--muted)}
 .status-dot{width:7px;height:7px;border-radius:50%;background:var(--muted2)}
-.status-dot[data-state="creating"]{background:#f59e0b}.status-dot[data-state="waiting"]{background:#3b82f6}.status-dot[data-state="connecting"]{background:#eab308;animation:pulse 1.2s infinite}.status-dot[data-state="connected"]{background:#22c55e}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
-#inviteInput{width:100%;min-height:90px;background:var(--input);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:12px;font-family:ui-monospace,monospace;font-size:11px;resize:vertical}
-#generateButton,#inviteButton{appearance:none;border:0;cursor:pointer;background:var(--white);color:var(--black);font-size:14px;font-weight:600;padding:12px 20px;border-radius:9999px;transition:transform .15s,box-shadow .15s}
-#generateButton:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(255,255,255,.12)}
+.status-dot[data-state="creating"]{background:#f59e0b}
+.status-dot[data-state="waiting"]{background:#3b82f6}
+.status-dot[data-state="connecting"]{background:#eab308}
+.status-dot[data-state="connected"]{background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.2)}
+.toggle{display:flex;background:#18181b;border:1px solid rgba(255,255,255,0.08);border-radius:9999px;padding:4px;gap:4px}
+.toggle button{flex:1;appearance:none;border:0;background:transparent;color:#71717a;padding:8px 14px;border-radius:9999px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
+.toggle button.active{background:#fff;color:#000;font-weight:600}
+#inviteButton,#generateButton{appearance:none;border:0;cursor:pointer;background:#fff;color:#000;font-size:14px;font-weight:600;padding:12px 20px;border-radius:9999px;margin-top:12px}
 .chat-row{display:flex;gap:10px;align-items:center;margin-bottom:16px}
-#chat{flex:1;background:var(--input);color:var(--text);border:1px solid var(--border);border-radius:9999px;padding:12px 16px;outline:none}
-#send{width:44px;height:44px;border-radius:9999px;border:1px solid var(--border);background:var(--card2);color:var(--text);display:inline-flex;align-items:center;justify-content:center}
-#messages{display:flex;flex-direction:column;gap:10px;min-height:64px}
-#messages p{margin:0;padding:10px 14px;border-radius:16px;font-size:13.5px;max-width:78%;word-break:break-word}
-#messages p.me{align-self:flex-end;background:var(--white);color:var(--black);border-bottom-right-radius:6px}
-#messages p.peer{align-self:flex-start;background:rgba(255,255,255,.08);border:1px solid var(--border);border-bottom-left-radius:6px}
-#messages p.system{align-self:center;border:1px dashed var(--border);color:var(--muted2);font-size:12px;font-family:ui-monospace,monospace;padding:6px 12px;border-radius:999px}
-dialog#dialog{background:#151517;color:var(--text);border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:24px;max-width:380px;width:calc(100% - 32px);margin:auto}
-dialog#dialog::backdrop{background:rgba(0,0,0,.6);backdrop-filter:blur(12px)}
+#chat{flex:1;background:#18181b;color:#fafafa;border:1px solid rgba(255,255,255,0.08);border-radius:9999px;padding:12px 16px}
+#inviteInput{width:100%;min-height:80px;background:#18181b;color:#fafafa;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px}
+#send{width:44px;height:44px;border-radius:9999px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.06);color:#fafafa}
+#messages{display:flex;flex-direction:column;gap:10px}
+#messages p{margin:0;padding:10px 14px;border-radius:16px;max-width:78%}
+#messages p.me{align-self:flex-end;background:#fff;color:#000;border-bottom-right-radius:6px}
+#messages p.peer{align-self:flex-start;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.08);border-bottom-left-radius:6px}
+#messages p.system{align-self:center;border:1px dashed rgba(255,255,255,0.08);color:#71717a;font-size:12px;font-family:ui-monospace;padding:6px 12px;border-radius:999px}
+dialog#dialog{background:#151517;color:#fafafa;border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:24px;max-width:420px;width:calc(100% - 32px);margin:auto}
+dialog#dialog::backdrop{background:rgba(0,0,0,0.6);backdrop-filter:blur(12px)}
 .qr-wrap{background:#fff;padding:16px;border-radius:16px;display:flex;justify-content:center;min-height:312px}
 #qr{width:100%;max-width:280px;aspect-ratio:1;display:block;border-radius:8px}
 .dialog-actions{display:flex;gap:10px;margin-top:12px}
-#closeButton{flex:1;padding:11px 16px;border-radius:9999px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text);cursor:pointer}
-.dialog-hint{font-size:11px;color:var(--muted2);text-align:center;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-family:ui-monospace,monospace;margin-top:12px}
-.footer{margin-top:28px;display:flex;justify-content:space-between;flex-wrap:wrap;font-size:11px;color:var(--muted2);font-family:ui-monospace,monospace}
-</style>
-</head>
-<body>
-<div class="shell">
-  <div class="eyebrow">WEBRTC / QR • P2P • JOIN</div>
-  <h1>Join</h1>
-  <p class="desc">Paste the invite code or open from host QR. An accept QR will be shown for the host to scan. No CDN, no external links.</p>
-  <div class="card card-pad" style="margin-bottom:16px">
-    <div class="card-header"><div class="card-label">Invite</div><div class="status"><span class="status-dot" id="statusDot" data-state="idle"></span><span id="statusText">Waiting for invite</span></div></div>
-    <p style="margin:0 0 12px;color:var(--muted);font-size:13px">If you opened from QR, it auto-detects. Otherwise paste base64 invite below.</p>
-    <textarea id="inviteInput" placeholder="Paste invite code here (base64)..."></textarea>
-    <button id="generateButton" type="button" style="margin-top:10px">Generate accept QR</button>
-    <div id="inviteStatus" style="margin-top:10px;font-size:11px;color:var(--muted2);font-family:ui-monospace,monospace"></div>
-  </div>
-  <div class="card card-pad">
-    <div class="card-header"><div class="card-label">Messages</div><div id="liveLabel" style="font-size:11px;color:var(--muted2);font-family:ui-monospace,monospace">Not connected</div></div>
-    <div class="chat-row"><input type="text" id="chat" placeholder="Not connected" disabled autocomplete="off"/><button id="send" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg></button></div>
-    <div id="messages"></div>
-  </div>
-  <div class="footer"><div>ICE: stun:stun.l.google.com:19302 • No signaling • E2E</div><div>Dark • No CDN</div></div>
+#scanButton,#closeButton{flex:1;padding:11px 16px;border-radius:9999px;border:1px solid rgba(255,255,255,0.08);cursor:pointer}
+#scanButton{background:#fff;color:#000;font-weight:600}
+#closeButton{background:rgba(255,255,255,0.06);color:#fafafa}
+.dialog-hint{font-size:11px;color:#71717a;text-align:center;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px;margin-top:12px;font-family:ui-monospace;word-break:break-all}
+.link-row{display:flex;gap:8px;margin-top:12px}
+.link-row input{flex:1;background:#18181b;color:#fafafa;border:1px solid rgba(255,255,255,0.08);border-radius:9999px;padding:10px 14px;font-size:12px;font-family:ui-monospace}
+.link-row button{padding:10px 16px;border-radius:9999px;border:0;background:#fff;color:#000;font-weight:600;cursor:pointer}
+.footer{margin-top:28px;display:flex;justify-content:space-between;flex-wrap:wrap;font-size:11px;color:#71717a;font-family:ui-monospace}
+</style></head><body><div class="shell"><div class="eyebrow">WEBRTC / QR • P2P • JOIN • AES DECRYPT</div><h1>Join</h1><p class="desc">Accepts plain ?invite= and AES encrypted ?e=...#k=... Links work offline and hosted.</p>
+<div class="card card-pad" style="margin-bottom:16px">
+  <div class="card-header"><div class="card-label">Mode</div><div class="status"><span class="status-dot" id="statusDot" data-state="idle"></span><span id="statusText">Waiting</span></div></div>
+  <div class="toggle" style="margin-bottom:10px"><button id="modeSame" type="button">Same Room</button><button id="modeInternet" type="button" class="active">Internet (NAT)</button></div>
+  <div id="modeHint" style="font-size:11px;color:#71717a;font-family:ui-monospace;margin-bottom:14px">Internet: STUN • AES decrypt supported</div>
+  <textarea id="inviteInput" placeholder="Paste invite (raw, ?invite=..., or AES ?e=...#k=...)" style="width:100%;min-height:80px;background:#18181b;color:#fafafa;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px"></textarea>
+  <div style="margin-top:12px;display:flex;gap:10px"><button id="generateButton" type="button">Generate accept QR</button><span id="liveLabel" style="font-size:11px;color:#71717a;font-family:ui-monospace;align-self:center">Waiting</span></div>
 </div>
-<dialog id="dialog"><div class="dialog-inner"><h2 id="h2">Scanned by host</h2><div class="qr-wrap"><canvas id="qr" width="512" height="512"></canvas></div><div class="dialog-actions"><button id="closeButton" type="button">Close</button></div><div class="dialog-hint">Show this QR to the host to complete the handshake.</div></div></dialog>
-<script>
-// QR Generator inlined - no CDN
-(function(){var QRUtil={PATTERN_POSITION_TABLE:[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,84,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],G15:1335,G18:7973,G15_MASK:21522,getBCHTypeInfo:function(d){var e=d<<10;while(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G15)>=0)e^=(QRUtil.G15<<(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G15)));return((d<<10)|e)^QRUtil.G15_MASK},getBCHTypeNumber:function(d){var e=d<<12;while(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G18)>=0)e^=(QRUtil.G18<<(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G18)));return(d<<12)|e},getBCHDigit:function(d){var e=0;while(d!=0){e++;d>>>=1}return e},getPatternPosition:function(t,n){return QRUtil.PATTERN_POSITION_TABLE[t-1][n]},getMask:function(t,i,j){switch(t){case 0:return(i+j)%2==0;case 1:return i%2==0;case 2:return j%3==0;case 3:return(i+j)%3==0;case 4:return(Math.floor(i/2)+Math.floor(j/3))%2==0;case 5:return(i*j)%2+(i*j)%3==0;case 6:return((i*j)%2+(i*j)%3)%2==0;case 7:return((i*j)%3+(i+j)%2)%2==0;default:throw new Error("bad")}},getErrorCorrectPolynomial:function(e){var a=new QRPolynomial([1],0);for(var i=0;i<e;i++)a=a.multiply(new QRPolynomial([1,QRMath.gexp(i)],0));return a},getLengthInBits:function(t,e){return e<10?8:16},getLostPoint:function(t){var n=t.getModuleCount(),e=0;for(var r=0;r<n;r++)for(var o=0;o<n;o++){var l=0,s=t.isDark(r,o);for(var u=-1;u<=1;u++)if(!(r+u<0||n<=r+u))for(var a=-1;a<=1;a++)if(!(o+a<0||n<=o+a)&&(u!=0||a!=0)&&s==t.isDark(r+u,o+a))l++;l>5&&(e+=3+l-5)}for(var r=0;r<n-1;r++)for(var o=0;o<n-1;o++){var c=0;t.isDark(r,o)&&c++;t.isDark(r+1,o)&&c++;t.isDark(r,o+1)&&c++;t.isDark(r+1,o+1)&&c++;(c==0||c==4)&&(e+=3)}for(var r=0;r<n;r++)for(var o=0;o<n-6;o++)t.isDark(r,o)&&!t.isDark(r,o+1)&&t.isDark(r,o+2)&&t.isDark(r,o+3)&&t.isDark(r,o+4)&&!t.isDark(r,o+5)&&t.isDark(r,o+6)&&(e+=40);for(var o=0;o<n;o++)for(var r=0;r<n-6;r++)t.isDark(r,o)&&!t.isDark(r+1,o)&&t.isDark(r+2,o)&&t.isDark(r+3,o)&&t.isDark(r+4,o)&&!t.isDark(r+5,o)&&t.isDark(r+6,o)&&(e+=40);var h=0;for(var o=0;o<n;o++)for(var r=0;r<n;r++)t.isDark(r,o)&&h++;return e+10*Math.abs(100*h/n/n-50)/5}};
+<div class="card card-pad"><div class="card-header"><div class="card-label">Messages</div></div><div class="chat-row"><input id="chat" placeholder="Not connected" disabled/><button id="send" type="button">Send</button></div><div id="messages"></div></div>
+<dialog id="dialog"><div><h2>Accept</h2><div class="qr-wrap"><canvas id="qr" width="512" height="512"></canvas></div><div id="offerMeta" class="dialog-hint">Accept QR</div><div class="link-row"><input id="shareLink" readonly/><button id="copyLinkBtn" type="button">Copy</button></div><button id="closeButton" style="margin-top:12px;width:100%;padding:11px;border-radius:9999px;background:rgba(255,255,255,0.06);color:#fafafa;border:1px solid rgba(255,255,255,0.08)">Close</button></div></dialog>
+<div class="footer"><div>ICE toggle + AES-GCM decrypt • rounded 20px</div><div>ericeisaman.github.io/pair/examples/join.html</div></div></div><script>// QR Generator - Kazuhiko Arase MIT - inlined, no CDN
+(function(){
+var QRUtil={PATTERN_POSITION_TABLE:[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,84,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],G15:1335,G18:7973,G15_MASK:21522,getBCHTypeInfo:function(d){var e=d<<10;while(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G15)>=0)e^=(QRUtil.G15<<(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G15)));return((d<<10)|e)^QRUtil.G15_MASK},getBCHTypeNumber:function(d){var e=d<<12;while(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G18)>=0)e^=(QRUtil.G18<<(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G18)));return(d<<12)|e},getBCHDigit:function(d){var e=0;while(d!=0){e++;d>>>=1}return e},getPatternPosition:function(t,n){return QRUtil.PATTERN_POSITION_TABLE[t-1][n]},getMask:function(t,i,j){switch(t){case 0:return(i+j)%2==0;case 1:return i%2==0;case 2:return j%3==0;case 3:return(i+j)%3==0;case 4:return(Math.floor(i/2)+Math.floor(j/3))%2==0;case 5:return(i*j)%2+(i*j)%3==0;case 6:return((i*j)%2+(i*j)%3)%2==0;case 7:return((i*j)%3+(i+j)%2)%2==0;default:throw new Error("bad")}},getErrorCorrectPolynomial:function(e){var a=new QRPolynomial([1],0);for(var i=0;i<e;i++)a=a.multiply(new QRPolynomial([1,QRMath.gexp(i)],0));return a},getLengthInBits:function(t,e){return e<10?8:16},getLostPoint:function(t){var n=t.getModuleCount(),e=0;for(var r=0;r<n;r++)for(var o=0;o<n;o++){var l=0,s=t.isDark(r,o);for(var u=-1;u<=1;u++)if(!(r+u<0||n<=r+u))for(var a=-1;a<=1;a++)if(!(o+a<0||n<=o+a)&&(u!=0||a!=0)&&s==t.isDark(r+u,o+a))l++;l>5&&(e+=3+l-5)}for(var r=0;r<n-1;r++)for(var o=0;o<n-1;o++){var c=0;t.isDark(r,o)&&c++;t.isDark(r+1,o)&&c++;t.isDark(r,o+1)&&c++;t.isDark(r+1,o+1)&&c++;(c==0||c==4)&&(e+=3)}for(var r=0;r<n;r++)for(var o=0;o<n-6;o++)t.isDark(r,o)&&!t.isDark(r,o+1)&&t.isDark(r,o+2)&&t.isDark(r,o+3)&&t.isDark(r,o+4)&&!t.isDark(r,o+5)&&t.isDark(r,o+6)&&(e+=40);for(var o=0;o<n;o++)for(var r=0;r<n-6;r++)t.isDark(r,o)&&!t.isDark(r+1,o)&&t.isDark(r+2,o)&&t.isDark(r+3,o)&&t.isDark(r+4,o)&&!t.isDark(r+5,o)&&t.isDark(r+6,o)&&(e+=40);var h=0;for(var o=0;o<n;o++)for(var r=0;r<n;r++)t.isDark(r,o)&&h++;return e+10*Math.abs(100*h/n/n-50)/5}};
 var QRMath={glog:function(n){return QRMath.LOG_TABLE[n]},gexp:function(n){while(n<0)n+=255;while(n>=256)n-=255;return QRMath.EXP_TABLE[n]},EXP_TABLE:new Array(256),LOG_TABLE:new Array(256)};for(var i=0;i<8;i++)QRMath.EXP_TABLE[i]=1<<i;for(var i=8;i<256;i++)QRMath.EXP_TABLE[i]=QRMath.EXP_TABLE[i-4]^QRMath.EXP_TABLE[i-5]^QRMath.EXP_TABLE[i-6]^QRMath.EXP_TABLE[i-8];for(var i=0;i<255;i++)QRMath.LOG_TABLE[QRMath.EXP_TABLE[i]]=i;
 function QRPolynomial(num,shift){var o=0;while(o<num.length&&num[o]==0)o++;this.num=new Array(num.length-o+shift);for(var i=0;i<num.length-o;i++)this.num[i]=num[i+o]}
-QRPolynomial.prototype={get:function(i){return this.num[i]},getLength:function(){return this.num.length},multiply:function(e){var n=new Array(this.getLength()+e.getLength()-1);for(var i=0;i<this.getLength();i++)for(var j=0;j<e.getLength();j++)n[i+j]^=QRMath.gexp(QRMath.glog(this.get(i))+QRMath.glog(e.get(j)));return new QRPolynomial(n,0)},mod:function(e){if(this.getLength()-e.getLength()<0)return this;var r=QRMath.glog(this.get(0))-QRMath.glog(e.get(0)),n=new Array(this.getLength());for(var i=0;i<this.getLength();i++)n[i]=this.get(i);for(var i=0;i<e.getLength();i++)n[i]^=QRMath.gexp(QRMath.glog(e.get(i))+r);return new QRPolynomial(n
+QRPolynomial.prototype={get:function(i){return this.num[i]},getLength:function(){return this.num.length},multiply:function(e){var n=new Array(this.getLength()+e.getLength()-1);for(var i=0;i<this.getLength();i++)for(var j=0;j<e.getLength();j++)n[i+j]^=QRMath.gexp(QRMath.glog(this.get(i))+QRMath.glog(e.get(j)));return new QRPolynomial(n,0)},mod:function(e){if(this.getLength()-e.getLength()<0)return this;var r=QRMath.glog(this.get(0))-QRMath.glog(e.get(0)),n=new Array(this.getLength());for(var i=0;i<this.getLength();i++)n[i]=this.get(i);for(var i=0;i<e.getLength();i++)n[i]^=QRMath.gexp(QRMath.glog(e.get(i))+r);return new QRPolynomial(n,0).mod(e)}};
+function QRRSBlock(t,c){this.totalCount=t;this.dataCount=c}
+QRRSBlock.RS_BLOCK_TABLE=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]];
+QRRSBlock.getRSBlocks=function(t){var r=QRRSBlock.RS_BLOCK_TABLE[(t-1)*4+1];var n=r.length/3,o=[];for(var i=0;i<n;i++){var a=r[3*i+0],f=r[3*i+1],c=r[3*i+2];for(var h=0;h<a;h++)o.push(new QRRSBlock(f,c))}return o};
+function QRBitBuffer(){this.buffer=[];this.length=0}
+QRBitBuffer.prototype={put:function(num,length){for(var i=0;i<length;i++)this.putBit(((num>>>(length-i-1))&1)==1)},getLengthInBits:function(){return this.length},putBit:function(bit){var b=Math.floor(this.length/8);if(this.buffer.length<=b)this.buffer.push(0);if(bit)this.buffer[b]|=0x80>>>(this.length%8);this.length++}};
+function QR8bitByte(d){this.data=d}
+QR8bitByte.prototype={getLength:function(){return this.data.length},write:function(b){for(var i=0;i<this.data.length;i++)b.put(this.data.charCodeAt(i),8)}};
+function QRCodeModel(t,e){this.typeNumber=t;this.errorCorrectLevel=e;this.modules=null;this.moduleCount=0;this.dataCache=null;this.dataList=[]}
+QRCodeModel.prototype={addData:function(d){this.dataList.push(new QR8bitByte(d))},isDark:function(r,c){return this.modules[r][c]},getModuleCount:function(){return this.moduleCount},make:function(){if(this.typeNumber<1){for(var t=1;t<40;t++){var rs=QRRSBlock.getRSBlocks(t);var buf=new QRBitBuffer();var total=0;for(var i=0;i<rs.length;i++)total+=rs[i].dataCount;for(var i=0;i<this.dataList.length;i++){var d=this.dataList[i];buf.put(4,4);buf.put(d.getLength(),QRUtil.getLengthInBits(4,t));d.write(buf)}if(buf.getLengthInBits()<=total*8){this.typeNumber=t;break}}}this.makeImpl(false,this.getBestMaskPattern())},makeImpl:function(test,mask){this.moduleCount=this.typeNumber*4+17;this.modules=new Array(this.moduleCount);for(var r=0;r<this.moduleCount;r++){this.modules[r]=new Array(this.moduleCount);for(var c=0;c<this.moduleCount;c++)this.modules[r][c]=null}this.setupPositionProbePattern(0,0);this.setupPositionProbePattern(this.moduleCount-7,0);this.setupPositionProbePattern(0,this.moduleCount-7);this.setupPositionAdjustPattern();this.setupTimingPattern();this.setupTypeInfo(test,mask);if(this.typeNumber>=7)this.setupTypeNumber(test);if(this.dataCache==null)this.dataCache=QRCodeModel.createData(this.typeNumber,this.errorCorrectLevel,this.dataList);this.mapData(this.dataCache,mask)},setupPositionProbePattern:function(row,col){for(var r=-1;r<=7;r++)if(!(row+r<=-1||this.moduleCount<=row+r))for(var c=-1;c<=7;c++)if(!(col+c<=-1||this.moduleCount<=col+c))this.modules[row+r][col+c]=(0<=r&&r<=6&&(c==0||c==6)||0<=c&&c<=6&&(r==0||r==6)||2<=r&&r<=4&&2<=c&&c<=4)?true:false},getBestMaskPattern:function(){var m=0,p=0;for(var i=0;i<8;i++){this.makeImpl(true,i);var l=QRUtil.getLostPoint(this);if(i==0||m>l){m=l;p=i}}return p},setupTimingPattern:function(){for(var r=8;r<this.moduleCount-8;r++)if(this.modules[r][6]==null)this.modules[r][6]=r%2==0;for(var c=8;c<this.moduleCount-8;c++)if(this.modules[6][c]==null)this.modules[6][c]=c%2==0},setupPositionAdjustPattern:function(){var pos=QRUtil.PATTERN_POSITION_TABLE[this.typeNumber-1];for(var i=0;i<pos.length;i++)for(var j=0;j<pos.length;j++){var row=pos[i],col=pos[j];if(this.modules[row][col]!=null)continue;for(var r=-2;r<=2;r++)for(var c=-2;c<=2;c++)this.modules[row+r][col+c]=r==-2||r==2||c==-2||c==2||r==0&&c==0?true:false}},setupTypeNumber:function(test){var bits=QRUtil.getBCHTypeNumber(this.typeNumber);for(var i=0;i<18;i++){var mod=!test&&((bits>>i)&1)==1;this.modules[Math.floor(i/3)][i%3+this.moduleCount-8-3]=mod}for(var i=0;i<18;i++){var mod=!test&&((bits>>i)&1)==1;this.modules[i%3+this.moduleCount-8-3][Math.floor(i/3)]=mod}},setupTypeInfo:function(test,mask){var data=(this.errorCorrectLevel<<3)|mask;var bits=QRUtil.getBCHTypeInfo(data);for(var i=0;i<15;i++){var mod=!test&&((bits>>i)&1)==1;if(i<6)this.modules[i][8]=mod;else if(i<8)this.modules[i+1][8]=mod;else this.modules[this.moduleCount-15+i][8]=mod}for(var i=0;i<15;i++){var mod=!test&&((bits>>i)&1)==1;if(i<8)this.modules[8][this.moduleCount-i-1]=mod;else if(i<9)this.modules[8][15-i-1+1]=mod;else this.modules[8][15-i-1]=mod}this.modules[this.moduleCount-8][8]=!test},mapData:function(data,mask){var inc=-1,row=this.moduleCount-1,bitIndex=7,byteIndex=0;for(var col=this.moduleCount-1;col>0;col-=2){if(col==6)col--;for(;;){for(var c=0;c<2;c++)if(this.modules[row][col-c]==null){var dark=false;if(byteIndex<data.length)dark=(((data[byteIndex]>>>bitIndex)&1)==1);if(QRUtil.getMask(mask,row,col-c))dark=!dark;this.modules[row][col-c]=dark;bitIndex--;if(bitIndex==-1){byteIndex++;bitIndex=7}}row+=inc;if(row<0||this.moduleCount<=row){row-=inc;inc=-inc;break}}}}};
+QRCodeModel.createData=function(t,e,list){var rs=QRRSBlock.getRSBlocks(t);var buf=new QRBitBuffer();for(var i=0;i<list.length;i++){var d=list[i];buf.put(4,4);buf.put(d.getLength(),QRUtil.getLengthInBits(4,t));d.write(buf)}var total=0;for(var i=0;i<rs.length;i++)total+=rs[i].dataCount;if(buf.getLengthInBits()+4<=total*8)buf.put(0,4);while(buf.getLengthInBits()%8!=0)buf.putBit(false);while(buf.getLengthInBits()<total*8){buf.put(236,8);if(buf.getLengthInBits()>=total*8)break;buf.put(17,8)}return QRCodeModel.createBytes(buf,rs)};
+QRCodeModel.createBytes=function(buf,rs){var off=0,maxDc=0,maxEc=0,dc=new Array(rs.length),ec=new Array(rs.length);for(var r=0;r<rs.length;r++){var dcCount=rs[r].dataCount,ecCount=rs[r].totalCount-dcCount;maxDc=Math.max(maxDc,dcCount);maxEc=Math.max(maxEc,ecCount);dc[r]=new Array(dcCount);for(var i=0;i<dc[r].length;i++)dc[r][i]=0xff&buf.buffer[i+off];off+=dcCount;var rsPoly=QRUtil.getErrorCorrectPolynomial(ecCount);var raw=new QRPolynomial(dc[r],rsPoly.getLength()-1);var mod=raw.mod(rsPoly);ec[r]=new Array(rsPoly.getLength()-1);for(var i=0;i<ec[r].length;i++){var mi=i+mod.getLength()-ec[r].length;ec[r][i]=mi>=0?mod.get(mi):0}}var total=0;for(var i=0;i<rs.length;i++)total+=rs[i].totalCount;var data=new Array(total),idx=0;for(var i=0;i<maxDc;i++)for(var r=0;r<rs.length;r++)if(i<dc[r].length)data[idx++]=dc[r][i];for(var i=0;i<maxEc;i++)for(var r=0;r<rs.length;r++)if(i<ec[r].length)data[idx++]=ec[r][i];return data};
+window._qrgen=function(txt){var m=new QRCodeModel(0,0);m.addData(txt);m.make();return m};
+})();
+function drawQRToCanvas(c,txt){
+  var m=window._qrgen(txt);
+  var cnt=m.getModuleCount();
+  var ctx=c.getContext('2d');
+  var s=c.width,mar=6,cell=(s-mar*2)/cnt;
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,s,s);
+  ctx.fillStyle='#000';
+  for(var r=0;r<cnt;r++)for(var cc=0;cc<cnt;cc++)if(m.isDark(r,cc))ctx.fillRect(mar+cc*cell,mar+r*cell,Math.ceil(cell),Math.ceil(cell));
+}
+let currentMode='internet';
+function getConfig(){
+  if(currentMode==='same-room') return {iceServers:[]};
+  return {iceServers:[{urls:"stun:stun.l.google.com:19302"}]};
+}
+let CONFIG=getConfig();
+const st=document.getElementById('statusText');
+const msgs=document.getElementById('messages');
+const chat=document.getElementById('chat');
+const sendBtn=document.getElementById('send');
+const inviteInput=document.getElementById('inviteInput');
+const genBtn=document.getElementById('generateButton');
+const qr=document.getElementById('qr');
+const dialog=document.getElementById('dialog');
+const closeBtn=document.getElementById('closeButton');
+const live=document.getElementById('liveLabel');
+const modeSame=document.getElementById('modeSame');
+const modeInternet=document.getElementById('modeInternet');
+function setMode(m){
+  currentMode=m;
+  CONFIG=getConfig();
+  if(modeSame && modeInternet){
+    modeSame.classList.toggle('active', m==='same-room');
+    modeInternet.classList.toggle('active', m==='internet');
+  }
+  var hint=document.getElementById('modeHint');
+  if(hint) hint.textContent = m==='same-room' ? 'Same-room: host only • offline' : 'Internet: STUN • AES decrypt supported • share link';
+}
+if(modeSame) modeSame.addEventListener('click', function(){setMode('same-room');});
+if(modeInternet) modeInternet.addEventListener('click', function(){setMode('internet');});
+setMode('internet');
+function addMsg(t,c){var p=document.createElement('p');p.className=c||'peer';p.textContent=t;msgs.appendChild(p);msgs.scrollTop=msgs.scrollHeight;}
+function enc(o){return btoa(JSON.stringify(o));}
+function dec(s){return JSON.parse(atob(s));}
+function bytesToB64Url(bytes){
+  let binary='';
+  for(let i=0;i<bytes.length;i++) binary+=String.fromCharCode(bytes[i]);
+  return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function b64UrlToBytes(b64url){
+  b64url=b64url.replace(/-/g,'+').replace(/_/g,'/');
+  while(b64url.length%4) b64url+='=';
+  let binary=atob(b64url);
+  let bytes=new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
+  return bytes;
+}
+async function decryptOfferJson(eB64Url, kB64Url){
+  const combined=b64UrlToBytes(eB64Url);
+  const iv=combined.slice(0,12);
+  const ct=combined.slice(12);
+  const rawKey=b64UrlToBytes(kB64Url);
+  const key=await crypto.subtle.importKey("raw", rawKey, {name:"AES-GCM"}, false, ["decrypt"]);
+  const plain=await crypto.subtle.decrypt({name:"AES-GCM", iv}, key, ct);
+  return new TextDecoder().decode(plain);
+}
+function extractInvite(input){
+  input=input.trim();
+  try{var u=new URL(input);var v=u.searchParams.get('invite');if(v)return v;}catch(e){}
+  if(input.includes('invite=')){var m=input.match(/invite=([^&]+)/);if(m)return decodeURIComponent(m[1]);}
+  return input;
+}
+function extractEncryptedFromUrl(){
+  try{
+    var url=new URL(location.href);
+    var e=url.searchParams.get('e');
+    if(!e) return null;
+    var k=null;
+    // key may be in hash #k= or ?k=
+    if(location.hash.includes('k=')){
+      var hm=location.hash.match(/k=([^&]+)/);
+      if(hm) k=decodeURIComponent(hm[1]);
+    }
+    if(!k) k=url.searchParams.get('k');
+    if(e && k) return {e:e,k:k};
+  }catch(e){}
+  return null;
+}
+let pc=null,sendCh=null,recvCh=null;
+async function createAnswerFromInvite(rawInvite){
+  var inviteCode=extractInvite(rawInvite);
+  if(pc){try{pc.close();}catch(e){}}
+  pc=new RTCPeerConnection(CONFIG);
+  sendCh=pc.createDataChannel('fromuser');
+  sendCh.onopen=function(){st.textContent='Connected';addMsg('Connected successfully @ '+Date.now(),'system');chat.disabled=false;if(live)live.textContent='Live';};
+  pc.onconnectionstatechange=function(){st.textContent=pc.connectionState;};
+  pc.ondatachannel=function(e){recvCh=e.channel;recvCh.onmessage=function(ev){try{var m=JSON.parse(ev.data);addMsg(m.user+': '+m.text,'peer');}catch(_){addMsg(ev.data,'peer');}};chat.disabled=false;if(live)live.textContent='Live';};
+  var remoteDesc=dec(inviteCode);
+  await pc.setRemoteDescription(remoteDesc);
+  var answer=await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+  await new Promise(function(r){
+    if(pc.iceGatheringState==='complete')return r();
+    var done=false;
+    var to=setTimeout(function(){if(!done){done=true;r();}},1500);
+    pc.addEventListener('icecandidate',function(ev){if(!ev.candidate&&!done){done=true;clearTimeout(to);r();}});
+    pc.addEventListener('icegatheringstatechange',function(){if(pc.iceGatheringState==='complete'&&!done){done=true;clearTimeout(to);r();}});
+  });
+  return enc(pc.localDescription);
+}
+async function createAnswerFromEncrypted(e,k){
+  var jsonStr=await decryptOfferJson(e,k);
+  var remoteDesc=JSON.parse(jsonStr);
+  if(pc){try{pc.close();}catch(e){}}
+  pc=new RTCPeerConnection(CONFIG);
+  sendCh=pc.createDataChannel('fromuser');
+  sendCh.onopen=function(){st.textContent='Connected';addMsg('Connected successfully @ '+Date.now(),'system');chat.disabled=false;if(live)live.textContent='Live';};
+  pc.onconnectionstatechange=function(){st.textContent=pc.connectionState;};
+  pc.ondatachannel=function(e){recvCh=e.channel;recvCh.onmessage=function(ev){try{var m=JSON.parse(ev.data);addMsg(m.user+': '+m.text,'peer');}catch(_){addMsg(ev.data,'peer');}};chat.disabled=false;if(live)live.textContent='Live';};
+  await pc.setRemoteDescription(remoteDesc);
+  var answer=await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+  await new Promise(function(r){
+    if(pc.iceGatheringState==='complete')return r();
+    var done=false;
+    var to=setTimeout(function(){if(!done){done=true;r();}},1500);
+    pc.addEventListener('icecandidate',function(ev){if(!ev.candidate&&!done){done=true;clearTimeout(to);r();}});
+    pc.addEventListener('icegatheringstatechange',function(){if(pc.iceGatheringState==='complete'&&!done){done=true;clearTimeout(to);r();}});
+  });
+  return enc(pc.localDescription);
+}
+async function handleInvite(raw){
+  try{
+    var acceptCode=await createAnswerFromInvite(raw);
+    drawQRToCanvas(qr, acceptCode);
+    var hostUrl = currentMode==='internet' ? 'https://ericeisaman.github.io/pair/examples/host.html?accept='+encodeURIComponent(acceptCode) : 'host.html?accept='+encodeURIComponent(acceptCode);
+    var meta=document.getElementById('offerMeta');
+    if(meta) meta.textContent='Accept • mode:'+currentMode;
+    var linkInput=document.getElementById('shareLink');
+    if(linkInput) linkInput.value=hostUrl;
+    dialog.showModal();
+    st.textContent='Ready for host scan';
+  }catch(e){addMsg('Failed: '+e,'system');}
+}
+async function handleEncryptedInvite(e,k){
+  try{
+    var acceptCode=await createAnswerFromEncrypted(e,k);
+    drawQRToCanvas(qr, acceptCode);
+    var hostUrl = currentMode==='internet' ? 'https://ericeisaman.github.io/pair/examples/host.html?accept='+encodeURIComponent(acceptCode) : 'host.html?accept='+encodeURIComponent(acceptCode);
+    var meta=document.getElementById('offerMeta');
+    if(meta) meta.textContent='Accept • decrypted AES • mode:'+currentMode;
+    var linkInput=document.getElementById('shareLink');
+    if(linkInput) linkInput.value=hostUrl;
+    dialog.showModal();
+    st.textContent='Decrypted AES • Ready for host scan';
+  }catch(e){addMsg('Failed AES decrypt: '+e,'system');}
+}
+if(genBtn){genBtn.addEventListener('click', function(){handleInvite(inviteInput.value);});}
+if(closeBtn){closeBtn.addEventListener('click', function(){dialog.close();});}
+if(sendBtn){
+ sendBtn.addEventListener('click', function(){
+   if(!chat.value.trim())return;
+   addMsg('Me: '+chat.value,'me');
+   var payload=JSON.stringify({user:'Joinee',text:chat.value});
+   try{if(sendCh&&sendCh.readyState==='open')sendCh.send(payload);else if(recvCh)recvCh.send(payload);}catch(e){}
+   chat.value='';
+ });
+ if(chat){chat.addEventListener('keydown', function(e){if(e.key==='Enter'){sendBtn.click();}});}
+}
+var copyBtn=document.getElementById('copyLinkBtn');
+if(copyBtn){
+ copyBtn.addEventListener('click', function(){
+   var linkInput=document.getElementById('shareLink');
+   navigator.clipboard.writeText(linkInput.value).then(function(){copyBtn.textContent='Copied!';setTimeout(function(){copyBtn.textContent='Copy';},1200);});
+ });
+}
+(function(){
+  try{
+    // First check AES encrypted ?e=...#k=...
+    var encData=extractEncryptedFromUrl();
+    if(encData){
+      if(inviteInput) inviteInput.value='AES encrypted: e='+encData.e.slice(0,20)+'...';
+      handleEncryptedInvite(encData.e, encData.k);
+      return;
+    }
+    var params=new URLSearchParams(location.search);
+    var c=params.get('invite');
+    if(c){
+      if(inviteInput)inviteInput.value=c;
+      handleInvite(c);
+    }
+  }catch(e){}
+})();
+</script></body></html>
