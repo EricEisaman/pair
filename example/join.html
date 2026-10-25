@@ -53,7 +53,7 @@ dialog#dialog::backdrop, dialog#acceptDialog::backdrop{background:rgba(0,0,0,0.6
   <div id="modeHint" style="font-size:11px;color:#71717a;font-family:ui-monospace;margin-bottom:14px">Internet: STUN + AES creds exchange • symmetrical</div>
   <h3 style="margin:12px 0 6px;font-size:15px">1. Create Offer (Invite)</h3>
   <p style="margin:0;color:#a1a1aa;font-size:12px">You know the site. Create offer, share AES creds e.k with person in same room.</p>
-  <button id="inviteButton" type="button">Create invite</button>
+  <button id="inviteButton" type="button">Create invite</button><button id="clearStorageBtn" type="button" style="margin-left:8px;background:rgba(255,255,255,0.06);color:#a1a1aa;border:1px solid rgba(255,255,255,0.08);padding:12px 16px;border-radius:9999px;font-size:12px;cursor:pointer">Clear storage</button>
 </div>
 <div class="card card-pad" style="margin-bottom:16px">
   <div class="card-header"><div class="card-label">2. Paste Offer (Invite) — I am Joiner</div></div>
@@ -344,18 +344,30 @@ function extractInviteFromCurrentUrl(){
 }
 function saveOffer(offerJson){
   try{
-    var obj={offer:offerJson, mode:currentMode, ts:Date.now()};
-    localStorage.setItem('webrtc-qr-last-offer', offerJson);
-    localStorage.setItem('webrtc-qr-last-offer-meta', JSON.stringify(obj));
-    sessionStorage.setItem('webrtc-qr-last-offer', offerJson);
+    var obj={offer:offerJson, mode:currentMode, ts:Date.now(), tab: Math.random().toString(36).slice(2)};
+    // sessionStorage primary — avoids 2-tab race in local test
+    try{sessionStorage.setItem('webrtc-qr-last-offer', offerJson);}catch(e){}
+    try{sessionStorage.setItem('webrtc-qr-last-offer-meta', JSON.stringify(obj));}catch(e){}
+    // localStorage fallback for ?accept= new tab restore
+    try{localStorage.setItem('webrtc-qr-last-offer', offerJson);}catch(e){}
+    try{localStorage.setItem('webrtc-qr-last-offer-meta', JSON.stringify(obj));}catch(e){}
   }catch(e){}
+}
+function clearStorage(){
+  try{localStorage.removeItem('webrtc-qr-last-offer'); localStorage.removeItem('webrtc-qr-last-offer-meta'); localStorage.removeItem('webrtc-qr-pending-accept');}catch(e){}
+  try{sessionStorage.removeItem('webrtc-qr-last-offer'); sessionStorage.removeItem('webrtc-qr-last-offer-meta'); sessionStorage.removeItem('webrtc-qr-pending-accept');}catch(e){}
+  addMsg('Storage cleared — create fresh offer','system');
 }
 async function restorePcFromStoredOffer(){
   try{
     var metaStr=null, stored=null;
-    try{metaStr=localStorage.getItem('webrtc-qr-last-offer-meta');}catch(e){}
-    try{stored=localStorage.getItem('webrtc-qr-last-offer');}catch(e){}
-    if(!stored){try{stored=sessionStorage.getItem('webrtc-qr-last-offer');}catch(e){}}
+    // sessionStorage first — avoids 2-tab overwrite
+    try{stored=sessionStorage.getItem('webrtc-qr-last-offer');}catch(e){}
+    try{metaStr=sessionStorage.getItem('webrtc-qr-last-offer-meta');}catch(e){}
+    if(!stored){
+      try{stored=localStorage.getItem('webrtc-qr-last-offer');}catch(e){}
+      try{metaStr=localStorage.getItem('webrtc-qr-last-offer-meta');}catch(e){}
+    }
     if(!stored) return false;
     if(metaStr){
       try{var metaObj=JSON.parse(metaStr); if(metaObj.mode && metaObj.mode!==currentMode){setMode(metaObj.mode);} if(metaObj.offer) stored=metaObj.offer;}catch(e){}
@@ -378,9 +390,21 @@ async function createInvite(){
  if(pc){try{pc.close();}catch(e){}}
  pc=new RTCPeerConnection(CONFIG);
  sendCh=pc.createDataChannel('fromhost');
- sendCh.onopen=function(){setStatus('connected','Connected');live.textContent='Live';addMsg('Connected successfully @ '+Date.now(),'system');chat.disabled=false;};
- pc.onconnectionstatechange=function(){st.textContent=pc.connectionState;if(pc.connectionState==='connected')setStatus('connected','Connected');};
- pc.ondatachannel=function(e){recvCh=e.channel;recvCh.onmessage=function(ev){try{var m=JSON.parse(ev.data);addMsg(m.user+': '+m.text,'peer');}catch(_){addMsg(ev.data,'peer');}};chat.disabled=false;live.textContent='Live';};
+ sendCh.onopen=function(){setStatus('connected','Connected');live.textContent='Live';addMsg('DataChannel open (host) @ '+Date.now(),'system');chat.disabled=false;};
+ sendCh.onclose=function(){addMsg('DataChannel closed','system');};
+ pc.onconnectionstatechange=function(){
+   st.textContent=pc.connectionState;
+   addMsg('pc connectionState: '+pc.connectionState,'system');
+   if(pc.connectionState==='connected'){setStatus('connected','Connected'); chat.disabled=false; live.textContent='Live';}
+   if(pc.connectionState==='failed'){addMsg('Connection failed — try Internet (NAT) mode','system'); setStatus('failed','Failed');}
+ };
+ pc.oniceconnectionstatechange=function(){addMsg('ICE: '+pc.iceConnectionState,'system');};
+ pc.onicegatheringstatechange=function(){addMsg('ICE gathering: '+pc.iceGatheringState,'system');};
+ pc.ondatachannel=function(e){
+   recvCh=e.channel;
+   recvCh.onmessage=function(ev){try{var m=JSON.parse(ev.data);addMsg(m.user+': '+m.text,'peer');}catch(_){addMsg(ev.data,'peer');}};
+   recvCh.onopen=function(){addMsg('Remote DataChannel open @ '+Date.now(),'system'); chat.disabled=false;};
+ };
  const offer=await pc.createOffer();
  await pc.setLocalDescription(offer);
  await new Promise(function(r){
@@ -495,10 +519,22 @@ async function createAnswerFromAny(rawInvite, eVal, kVal){
   }
   if(pc){try{pc.close();}catch(e){}}
   pc=new RTCPeerConnection(CONFIG);
-  sendCh=pc.createDataChannel('fromhost');
-  sendCh.onopen=function(){setStatus('connected','Connected');live.textContent='Live';addMsg('Connected successfully @ '+Date.now(),'system');chat.disabled=false;};
-  pc.onconnectionstatechange=function(){st.textContent=pc.connectionState;};
-  pc.ondatachannel=function(e){recvCh=e.channel;recvCh.onmessage=function(ev){try{var m=JSON.parse(ev.data);addMsg(m.user+': '+m.text,'peer');}catch(_){addMsg(ev.data,'peer');}};chat.disabled=false;live.textContent='Live';};
+  // Joiner does NOT create dataChannel — waits for host's channel (fixes duplicate channel bug that broke local 2-tab test)
+  pc.ondatachannel=function(e){
+    recvCh=e.channel;
+    recvCh.onopen=function(){setStatus('connected','Connected');live.textContent='Live';addMsg('DataChannel open (joiner) @ '+Date.now(),'system');chat.disabled=false;};
+    recvCh.onmessage=function(ev){try{var m=JSON.parse(ev.data);addMsg(m.user+': '+m.text,'peer');}catch(_){addMsg(ev.data,'peer');}};
+    recvCh.onclose=function(){addMsg('DataChannel closed','system');};
+  };
+  pc.onconnectionstatechange=function(){
+    st.textContent=pc.connectionState;
+    addMsg('pc connectionState: '+pc.connectionState,'system');
+    if(pc.connectionState==='connected'){setStatus('connected','Connected'); chat.disabled=false; live.textContent='Live';}
+    if(pc.connectionState==='failed'){addMsg('Connection failed — try Internet (NAT) mode or different network','system'); setStatus('failed','Failed');}
+  };
+  pc.oniceconnectionstatechange=function(){addMsg('ICE: '+pc.iceConnectionState,'system');};
+  pc.onicegatheringstatechange=function(){addMsg('ICE gathering: '+pc.iceGatheringState,'system');};
+  sendCh=null; // joiner uses recvCh to send
   await pc.setRemoteDescription(remoteDesc);
   var answer=await pc.createAnswer();
   await pc.setLocalDescription(answer);
@@ -550,6 +586,7 @@ inviteBtn.addEventListener('click', async function(){
  }catch(e){ setStatus('failed','Failed'); addMsg('Failed: '+e,'system'); inviteBtn.disabled=false; }
 });
 closeBtn.addEventListener('click', function(){dialog.close();setStatus('idle','Idle');inviteBtn.disabled=false;});
+var clearBtn=document.getElementById('clearStorageBtn'); if(clearBtn) clearBtn.addEventListener('click', function(){clearStorage();});
 if(closeAcceptBtn) closeAcceptBtn.addEventListener('click', function(){document.getElementById('acceptDialog').close();});
 if(copyBtn && linkInput){ copyBtn.addEventListener('click', function(){ navigator.clipboard.writeText(linkInput.value).then(function(){copyBtn.textContent='Copied!';setTimeout(function(){copyBtn.textContent='Copy';},1200);}); }); }
 if(copyEncBtn && linkEncInput){ copyEncBtn.addEventListener('click', function(){ navigator.clipboard.writeText(linkEncInput.value).then(function(){copyEncBtn.textContent='Copied!';setTimeout(function(){copyEncBtn.textContent='Copy Enc';},1200);}); }); }
@@ -565,8 +602,12 @@ function setupCopy(id){
 sendBtn.addEventListener('click', function(){
  if(!chat.value.trim())return;
  addMsg('Me: '+chat.value,'me');
- var payload=JSON.stringify({user:'Host',text:chat.value});
- try{if(sendCh&&sendCh.readyState==='open')sendCh.send(payload);else if(recvCh)recvCh.send(payload);}catch(e){}
+ var payload=JSON.stringify({user: currentMode+'/'+(pc && pc.localDescription && pc.localDescription.type || 'Host'),text:chat.value});
+ try{
+   if(sendCh&&sendCh.readyState==='open') sendCh.send(payload);
+   else if(recvCh&&recvCh.readyState==='open') recvCh.send(payload);
+   else addMsg('No open DataChannel yet — wait for connected','system');
+ }catch(e){addMsg('Send failed: '+e,'system');}
  chat.value='';
 });
 chat.addEventListener('keydown', function(e){if(e.key==='Enter'){sendBtn.click();}});
