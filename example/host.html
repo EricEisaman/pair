@@ -186,7 +186,7 @@ function setMode(m){
   CONFIG=getConfig();
   modeSame.classList.toggle('active', m==='same-room');
   modeInternet.classList.toggle('active', m==='internet');
-  document.getElementById('modeHint').textContent = m==='same-room' ? 'Same-room: host only • offline • fastest' : 'Internet: STUN • AES creds exchange • symmetrical';
+  document.getElementById('modeHint').textContent = m==='same-room' ? 'Same-room: host only • offline • mDNS .local — fails in same-browser 2-tab test, use Internet mode for local test' : 'Internet: STUN • AES creds exchange • symmetrical • RECOMMENDED for local 2-tab test';
 }
 modeSame.addEventListener('click', function(){setMode('same-room');});
 modeInternet.addEventListener('click', function(){setMode('internet');});
@@ -396,7 +396,7 @@ async function createInvite(){
    st.textContent=pc.connectionState;
    addMsg('pc connectionState: '+pc.connectionState,'system');
    if(pc.connectionState==='connected'){setStatus('connected','Connected'); chat.disabled=false; live.textContent='Live';}
-   if(pc.connectionState==='failed'){addMsg('Connection failed — try Internet (NAT) mode','system'); setStatus('failed','Failed');}
+   if(pc.connectionState==='failed'){addMsg('Connection failed — try Internet (NAT) mode (STUN) or different browsers','system'); setStatus('failed','Failed'); if(currentMode==='same-room'){addMsg('Same-room mDNS fails in same-browser tabs — switch to Internet mode','system');}}
  };
  pc.oniceconnectionstatechange=function(){addMsg('ICE: '+pc.iceConnectionState,'system');};
  pc.onicegatheringstatechange=function(){addMsg('ICE gathering: '+pc.iceGatheringState,'system');};
@@ -414,6 +414,12 @@ async function createInvite(){
    pc.addEventListener('icegatheringstatechange',function(){if(pc.iceGatheringState==='complete'&&!done){done=true;clearTimeout(to);r();}});
  });
  lastOfferJson=JSON.stringify(pc.localDescription);
+ try{
+   var sdp=pc.localDescription.sdp;
+   var hostC=(sdp.match(/typ host/g)||[]).length;
+   var srflxC=(sdp.match(/typ srflx/g)||[]).length;
+   addMsg('Created offer: host='+hostC+' srflx='+srflxC+' mode='+currentMode,'system');
+ }catch(e){}
  saveOffer(lastOfferJson);
  return enc(pc.localDescription);
 }
@@ -517,6 +523,18 @@ async function createAnswerFromAny(rawInvite, eVal, kVal){
     if(!inviteCode){ addMsg('Could not parse invite — paste plain invite, ?invite= URL, or AES e.k','system'); return; }
     try{ remoteDesc=dec(inviteCode); }catch(e){ addMsg('Failed parse invite: '+e+' — if AES, need e.k with dot','system'); return; }
   }
+  // Auto-detect mode from remote SDP — if offer has srflx, force Internet mode for better NAT traversal (fixes same-room mDNS .local failing in 2-tab local test)
+  try{
+    if(remoteDesc && remoteDesc.sdp && remoteDesc.sdp.includes('typ srflx')){
+      if(currentMode!=='internet'){ addMsg('Offer has srflx candidates → switching to Internet (NAT) mode for this answer','system'); setMode('internet'); }
+    }
+  }catch(e){}
+  // Log candidate types in offer
+  try{
+    var hostCount=(remoteDesc.sdp.match(/typ host/g)||[]).length;
+    var srflxCount=(remoteDesc.sdp.match(/typ srflx/g)||[]).length;
+    addMsg('Offer candidates: host='+hostCount+' srflx='+srflxCount+' mode='+currentMode,'system');
+  }catch(e){}
   if(pc){try{pc.close();}catch(e){}}
   pc=new RTCPeerConnection(CONFIG);
   // Joiner does NOT create dataChannel — waits for host's channel (fixes duplicate channel bug that broke local 2-tab test)
@@ -530,7 +548,14 @@ async function createAnswerFromAny(rawInvite, eVal, kVal){
     st.textContent=pc.connectionState;
     addMsg('pc connectionState: '+pc.connectionState,'system');
     if(pc.connectionState==='connected'){setStatus('connected','Connected'); chat.disabled=false; live.textContent='Live';}
-    if(pc.connectionState==='failed'){addMsg('Connection failed — try Internet (NAT) mode or different network','system'); setStatus('failed','Failed');}
+    if(pc.connectionState==='failed'){
+     addMsg('Connection failed — try Internet (NAT) mode (STUN) or use 2 different browsers + Clear storage','system');
+     setStatus('failed','Failed');
+     // Auto-suggest switching mode
+     if(currentMode==='same-room'){
+       addMsg('Hint: Same-room uses mDNS .local which fails between tabs on same machine. Switch to Internet mode and retry.','system');
+     }
+   }
   };
   pc.oniceconnectionstatechange=function(){addMsg('ICE: '+pc.iceConnectionState,'system');};
   pc.onicegatheringstatechange=function(){addMsg('ICE gathering: '+pc.iceGatheringState,'system');};
