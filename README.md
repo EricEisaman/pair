@@ -5,7 +5,7 @@
 
 Fully self-contained. No CDN. No external stylesheet. No external imports. All QR, WebRTC, and UI inlined.
 
-[DEMO](https://ericeisaman.github.io/pair/host.html)
+[DEMO](https://ericeisaman.github.io/pair/example/host.html)
 
 ---
 
