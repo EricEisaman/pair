@@ -111,7 +111,7 @@ Both sides can work without camera:
 
 ### 10) File:// vs Hosted
 - `file:///host.html` → relative `join.html?invite=...` links, Same Room mode recommended, works airplane mode
-- `https://ericeisaman.github.io/pair/example/host.html` (demo) and `https://ericeisaman.github.io/pair/example/host.html` → absolute links, both modes work, Internet mode adds STUN
+- `https://ericeisaman.github.io/pair/example/host.html` (demo, keep dammit) and `https://ericeisaman.github.io/pair/example/host.html` → absolute links, both modes work, Internet mode adds STUN
 
 ### 11) Mom's symmetrical — same page, AES creds only e.k (NEW primary)
 Both know the site `host.html`. No URL sharing needed.
@@ -158,7 +158,7 @@ Canonical hosted:
 - Host: https://ericeisaman.github.io/pair/example/host.html
 - Join: https://ericeisaman.github.io/pair/example/join.html?invite=...
 
-Demo : https://ericeisaman.github.io/pair/example/host.html
+Demo (keep dammit): https://ericeisaman.github.io/pair/example/host.html
 
 ---
 
@@ -255,6 +255,80 @@ Only stun: protocol remains in Internet mode. Same-room mode: zero network.
 - Colors: :root vars --bg, --card, --border, --text, --muted
 - AES: 256 GCM, 12-byte IV in encryptOfferJson / decryptOfferJson
 - Toggle default: setMode('internet') or 'same-room'
+
+
+---
+
+## local testing — 2 tabs on same machine (and why it failed in screenshot)
+
+Your screenshot `2026-10-25_at_12.13.29_AM.png` shows both windows say `Accepted via URL/QR/AES creds @ ...` but `Not connected` and right side `No active offer in this browser. Create invite first — I will auto-apply the accept.`
+
+Two bugs fixed:
+
+### Bug 1 — Duplicate DataChannel
+Old code:
+```js
+// Host
+pc.createDataChannel('fromhost')
+// Joiner also did
+pc.createDataChannel('fromhost')
+```
+Both sides creating a channel = 2 channels, neither opens. `setRemoteDescription` succeeds (`Accepted...`) but `connectionState` never becomes `connected`.
+
+Fixed:
+- **Host** (`createInvite`): creates `fromhost` channel, logs `DataChannel open (host)`
+- **Joiner** (`createAnswerFromAny`): does **NOT** create channel, only `pc.ondatachannel = ...` → logs `DataChannel open (joiner)`
+
+Now only one channel, created by host, opened on both sides.
+
+### Bug 2 — localStorage race in same browser
+Two tabs on same origin share `localStorage`. Both `Create invite` overwrite `webrtc-qr-last-offer`. Right tab had no offer when you pasted accept → `No active offer...` → it saved pending accept, then you created invite, auto-applied, but offer it restored was left tab's offer, not its own → mismatch → ICE fails.
+
+Fixed:
+- `saveOffer()` now writes to `sessionStorage` primary (per-tab) + `localStorage` fallback
+- `restorePcFromStoredOffer()` tries `sessionStorage` first
+- Added **Clear storage** button next to Create invite for clean tests
+- Better logs: `pc connectionState: ...`, `ICE: ...`, `ICE gathering: ...`, `DataChannel open/closed`
+
+### Correct local test procedure
+
+**Option A — Two different browsers (recommended) — use Internet mode for local 2-tab test:**
+- Chrome normal + Chrome private OR Chrome + Firefox
+- Both open `https://ericeisaman.github.io/pair/example/host.html`
+- Mode: **Internet (NAT)** for local 2-tab test — Same Room uses mDNS `.local` candidates which fail to resolve between tabs on same machine (your screenshot left shows `ICE: connected` but no `pc connectionState: connected` — classic mDNS issue). Internet mode adds STUN srflx and host candidates, logs `Offer candidates: host=X srflx=Y`.
+- Tab A: Section 1 Create invite → dialog shows `e`, `k`, `e.k` + QR for `e.k` → Copy combined `e.k` (has dot)
+- Tab B: Section 2 Paste Offer → paste `e.k` into big textarea (or `e` + `k` fields) → Generate Accept from Offer → dialog shows its own `e.k` → Copy (auto-detects srflx in offer → forces Internet mode if needed)
+- Tab A: Section 3 Paste Accept → paste B's `e.k` → Connect with Accept
+- You should see:
+  ```
+  Created offer: host=... srflx=... mode=internet
+  ICE gathering: gathering → complete
+  Offer candidates: host=... srflx=...
+  pc connectionState: connecting → connected
+  ICE: checking → connected
+  DataChannel open (host) / DataChannel open (joiner)
+  Live
+  ```
+- If you see `ICE: disconnected → failed` + `Connection failed — try Internet (NAT) mode` (right side of your screenshot), switch both to Internet mode and retry with Clear storage.
+
+
+**Option B — Same browser 2 tabs (not recommended — use Option A):**
+- Click **Clear storage** in both tabs first (new button next to Create invite — fixes `No active offer...` race)
+- Both set Mode: Internet (NAT) — Same Room mDNS `.local` fails in same-browser tabs (left shows `ICE: connected` but pc never `connected`, right shows `ICE: disconnected → failed`)
+- Do NOT both click Create invite — only Tab A creates offer
+- Tab B only does Section 2 Paste Offer → Generate Accept
+- Tab A does Section 3 Paste Accept
+- If you accidentally created offer in both tabs, click Clear storage and restart — otherwise sessionStorage/localStorage race returns. Better use 2 different browsers.
+
+**Option C — file:// offline:**
+- Open `file:///path/to/host.html` in two private windows
+- Same Room mode → same steps — zero network requests
+
+If `Accepted...` but not `Connected`, check logs:
+- `ICE: failed` → try Internet (NAT) mode (needs STUN) or different network
+- No `DataChannel open` → ensure only host created channel (fixed in latest)
+- `No active offer...` → you pasted accept before creating offer in that tab — create offer first, pending accept auto-applies.
+
 
 ---
 
