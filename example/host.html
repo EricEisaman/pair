@@ -183,10 +183,33 @@ function extractAcceptFromCurrentUrl(){
 }
 let pc=null,sendCh=null,recvCh=null,stream=null,video=null,det=null,raf=null,scanning=false,lastOfferJson=null;
 if('BarcodeDetector' in window){try{det=new BarcodeDetector({formats:['qr_code']});}catch(e){}}
+function saveOffer(offerJson){
+  try{
+    var obj = {offer: offerJson, mode: currentMode, ts: Date.now()};
+    localStorage.setItem('webrtc-qr-last-offer', offerJson);
+    localStorage.setItem('webrtc-qr-last-offer-meta', JSON.stringify(obj));
+    sessionStorage.setItem('webrtc-qr-last-offer', offerJson);
+  }catch(e){}
+}
 async function restorePcFromStoredOffer(){
   try{
-    var stored=localStorage.getItem('webrtc-qr-last-offer');
+    var metaStr=null, stored=null;
+    try{ metaStr=localStorage.getItem('webrtc-qr-last-offer-meta'); }catch(e){}
+    try{ stored=localStorage.getItem('webrtc-qr-last-offer'); }catch(e){}
+    if(!stored){
+      try{ stored=sessionStorage.getItem('webrtc-qr-last-offer'); }catch(e){}
+    }
     if(!stored) return false;
+    // Restore mode if we have it
+    if(metaStr){
+      try{
+        var metaObj=JSON.parse(metaStr);
+        if(metaObj.mode && metaObj.mode!==currentMode){
+          setMode(metaObj.mode);
+        }
+        if(metaObj.offer) stored=metaObj.offer;
+      }catch(e){}
+    }
     lastOfferJson=stored;
     pc=new RTCPeerConnection(CONFIG);
     sendCh=pc.createDataChannel('fromhost');
@@ -195,7 +218,7 @@ async function restorePcFromStoredOffer(){
     pc.ondatachannel=function(e){recvCh=e.channel;recvCh.onmessage=function(ev){try{var m=JSON.parse(ev.data);addMsg(m.user+': '+m.text,'peer');}catch(_){addMsg(ev.data,'peer');}};chat.disabled=false;live.textContent='Live';};
     var offerDesc=JSON.parse(stored);
     await pc.setLocalDescription(offerDesc);
-    await new Promise(function(r){setTimeout(r,200);});
+    await new Promise(function(r){setTimeout(r,300);});
     return true;
   }catch(e){
     console.warn('restore failed', e);
@@ -219,7 +242,7 @@ async function createInvite(){
    pc.addEventListener('icegatheringstatechange',function(){if(pc.iceGatheringState==='complete'&&!done){done=true;clearTimeout(to);r();}});
  });
  lastOfferJson=JSON.stringify(pc.localDescription);
- try{localStorage.setItem('webrtc-qr-last-offer', lastOfferJson);}catch(e){}
+ saveOffer(lastOfferJson);
  return enc(pc.localDescription);
 }
 function buildJoinUrl(inv){
@@ -240,19 +263,35 @@ function buildJoinUrlEnc(e,k){
   }
   return baseUrl+'?e='+encodeURIComponent(e)+'#k='+encodeURIComponent(k);
 }
-async function applyAccept(acceptRaw){
+async function applyAccept(acceptRaw, fromUrl){
   try{
     var acceptStr=extractAccept(acceptRaw);
     var desc=dec(acceptStr);
     if(!pc){
       var restored=await restorePcFromStoredOffer();
       if(!restored){
-        addMsg('No active offer. Create invite first, then paste accept.', 'system');
-        if(manualInput){manualInput.value=acceptRaw; manualArea.style.display='block';}
+        // Save pending accept so after user creates invite we auto-apply
+        try{
+          localStorage.setItem('webrtc-qr-pending-accept', acceptRaw);
+          sessionStorage.setItem('webrtc-qr-pending-accept', acceptRaw);
+        }catch(e){}
+        addMsg('No active offer in this browser. Create invite first — I will auto-apply the accept.', 'system');
+        if(manualInput){
+          manualInput.value=acceptRaw;
+          if(manualArea) manualArea.style.display='block';
+          // Show dialog with manual area visible
+          if(dialog && !dialog.open) try{dialog.showModal();}catch(e){}
+        }
+        // If this was from URL, keep URL visible
+        if(fromUrl){
+          setStatus('waiting','Create invite to apply accept');
+        }
         return;
       }
     }
     await pc.setRemoteDescription(desc);
+    // Clear pending
+    try{ localStorage.removeItem('webrtc-qr-pending-accept'); sessionStorage.removeItem('webrtc-qr-pending-accept'); }catch(e){}
     scanning=false;
     try{dialog.close();}catch(e){}
     if(video){try{video.pause();video.srcObject=null;}catch(e){}}
@@ -286,6 +325,16 @@ inviteBtn.addEventListener('click', async function(){
    dialog.showModal();
    setStatus('waiting','Waiting for scan');
    if(manualArea)manualArea.style.display='none';
+   // Auto-apply pending accept if user pasted accept URL before creating offer
+   try{
+     var pending=null;
+     try{ pending=localStorage.getItem('webrtc-qr-pending-accept'); }catch(e){}
+     if(!pending){ try{ pending=sessionStorage.getItem('webrtc-qr-pending-accept'); }catch(e){} }
+     if(pending){
+       addMsg('Found pending accept from URL, applying...', 'system');
+       setTimeout(function(){ applyAccept(pending, false); }, 800);
+     }
+   }catch(e){}
  }catch(e){
    setStatus('failed','Failed');
    addMsg('Failed: '+e,'system');
@@ -341,7 +390,7 @@ scanBtn.addEventListener('click', async function(){
          var codes=await det.detect(sc);
          if(codes&&codes[0]){
            var raw=codes[0].rawValue.trim();
-           await applyAccept(raw);
+           await applyAccept(raw, false);
            return;
          }
        }catch(e){}
@@ -356,7 +405,7 @@ scanBtn.addEventListener('click', async function(){
 if(manualConfirm){
  manualConfirm.addEventListener('click', async function(){
    var raw=manualInput.value.trim();
-   if(raw) await applyAccept(raw);
+   if(raw) await applyAccept(raw, false);
  });
 }
 (function handleAcceptUrlOnLoad(){
@@ -364,7 +413,7 @@ if(manualConfirm){
     var acceptParam=extractAcceptFromCurrentUrl();
     if(acceptParam){
       addMsg('Found accept in URL, applying...', 'system');
-      setTimeout(async function(){ await applyAccept(acceptParam); }, 500);
+      setTimeout(async function(){ await applyAccept(acceptParam, true); }, 500);
     }
   }catch(e){}
 })();
