@@ -27,8 +27,8 @@ Eyebrow: 11px mono uppercase • Title: 34px weight 650 tracking -0.03em • Des
 
 ## files
 
-- host-dark-no-cdn.html — Host — creates RTCPeerConnection, createDataChannel('fromhost'), createOffer(), encodes offer as base64 QR
-- join-dark-no-cdn.html — Join — parses ?invite= or manual paste, setRemoteDescription(), createAnswer(), encodes answer as base64 QR
+- host.html — Host — creates RTCPeerConnection, createDataChannel('fromhost'), createOffer(), encodes offer as base64 QR
+- join.html — Join — parses ?invite= or manual paste, setRemoteDescription(), createAnswer(), encodes answer as base64 QR
 - README.md — this file
 
 No style.css. No vendor folder. Single file each.
@@ -43,7 +43,7 @@ Host
 3. offer = await pc.createOffer(); await pc.setLocalDescription(offer)
 4. wait iceGatheringState === 'complete' or 1500ms timeout
 5. invite = btoa(JSON.stringify(pc.localDescription))
-  joinUrl = new URL('join-dark-no-cdn.html', location.href) + '?invite=' + encodeURIComponent(invite)
+  joinUrl = new URL('join.html', location.href) + '?invite=' + encodeURIComponent(invite)
   drawQRToCanvas(qr, joinUrl)  // QR now links to join page
 
 Join
@@ -65,11 +65,11 @@ QR lib: Kazuhiko Arase MIT inlined. No CDN. BarcodeDetector for scanning with ma
 
 ## usage
 
-Open host-dark-no-cdn.html → Create invite → QR appears.
+Open host.html → Create invite → QR appears.
 
 P2P offer generated • encrypted • local • 14:32:10
 
-On joiner device, open join-dark-no-cdn.html?invite=<base64> or paste invite.
+On joiner device, open join.html?invite=<base64> or paste invite.
 
 Joiner shows accept QR → host presses Scan accept → points camera.
 
