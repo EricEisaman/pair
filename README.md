@@ -1,78 +1,121 @@
-# WebRTC via QR
-Establish a WebRTC connection without requiring a signalling server (like TURN- or dedicated server). Instead, initial signalling is achieved by scanning QR codes in person.
+# webrtc-via-qr — local p2p
 
-**WIP Don't use this yet - there are no tests, no error handling and functionality might change!!!**
+> WEBRTC / QR • P2P • NO SIGNALING
+> Host creates an offer → QR → Joiner scans → accept QR → direct encrypted dataChannel. No relay after handshake.
 
-## Motivation
-Intended for local games. Setting up a WebRTC connection requires some way of exchanging description- and candidate-data between clients ("signalling"). Usually this is achieved by paying for a TURN server or hosting a dedicated server yourself. However, since everyone is available in-person anyway, the signalling might as well be done via some local exchange - in this case by scanning QR codes.
+Fully self-contained. No CDN. No external stylesheet. No external imports. All QR, WebRTC, and UI inlined.
 
-## Flow
-1. Host creates invite as QR code
-2. Joinee scans invite, which creates accept as QR code
-3. Host scans accept
-4. Connection will be established
+---
 
-## Example
-Check out the [example](https://ericeisaman.github.io/webrtc-via-qr/example/host.html). It requires two devices with a camera to scan the QR codes (smartphones recommended). After the connection is established you can chat via a `RTCDataChannel`.
+## style
 
-## Installation
-Download using NPM:
-```
-npm install webrtc-via-qr
-```
-Embed using [esm.run](https://esm.run):
-```js
-import { HostConnection, UserConnection } from "https://esm.run/webrtc-via-qr"
+This README mirrors the pages:
+
+- bg #0a0a0b • card rgba(255,255,255,0.04) • border rgba(255,255,255,0.08) • radius 20px
+- system font: -apple-system, BlinkMacSystemFont, Inter, SF Pro Display, Segoe UI
+- mono: ui-monospace, SFMono-Regular, Menlo
+- status dot: idle #71717a • waiting #3b82f6 • connecting #eab308 • connected #22c55e
+
+```css
+.shell { max-width:720px; margin:0 auto; padding:32px 20px }
+.card  { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:20px }
 ```
 
-## Usage
-The module exposes two classes:
-```js
-class HostConnection extends RTCPeerConnection
-class UserConnection extends RTCPeerConnection
-```
-Both are subclasses of [RTCPeerConnection](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection), which is at the core of WebRTC. Their only purpose is to simplify the connection process. The actual RTC functionality is inherited - whether you want to add tracks or just require a simple RTCDataChannel.
+Eyebrow: 11px mono uppercase • Title: 34px weight 650 tracking -0.03em • Desc: 14px muted
 
-The `config` parameter of the [constructor](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/RTCPeerConnection#configuration) of these subclasses includes one additional optional value: `gatheringTimeout`. It defines the upper time limit for the (now hidden) candidate gathering phase in ms and defaults to 1000. Only touch this if the QR code generation fails with no candidates.
+---
 
-Now onto the actual connection process, which is asymmetrical. The peer trying to connect uses a `HostConnection`, the responding peer uses a `UserConnection`.
+## files
 
-### Host
-```js
-const h = new HostConnection(config)
-// Step 4
-h.addEventListener("connectionstatechange", event => {
-	if (h.connectionState === "connected") console.log("connected")
-})
-// Step 1
-const inviteCode = await h.createInvite()
-// Step 3
-h.confirmAccept(acceptCode)
-```
+- host-dark-no-cdn.html — Host — creates RTCPeerConnection, createDataChannel('fromhost'), createOffer(), encodes offer as base64 QR
+- join-dark-no-cdn.html — Join — parses ?invite= or manual paste, setRemoteDescription(), createAnswer(), encodes answer as base64 QR
+- README.md — this file
 
-### Joinee
-```js
-let u = new UserConnection(config)
-// Step 4
-u.addEventListener("connectionstatechange", event => {
-	if (u.connectionState === "connected") console.log("connected")
-})
-// Step 2
-const acceptCode = await u.acceptInvite(inviteCode)
-```
+No style.css. No vendor folder. Single file each.
 
-Both of these codes `inviteCode` & `acceptCode` are Strings! The encoding to & decoding from a QR matrix is **not included** because this should be **your choice**. QR codes can be customized in so many different ways - error levels, colors, embedded logos, rounded pixels, or even [video](https://x.com/i/status/1782342900644188171)! Including a certain en-/decoder would be considered bloat by some, while not including enough functionality for others, which is why they are excluded from the scope of this package. The [example](https://ericeisaman.github.io/webrtc-via-qr/example/host.html) uses [qrcode](https://www.npmjs.com/package/qrcode) & [jsQR](https://www.npmjs.com/package/jsqr).
+---
 
-## Problems & limitations
-- Symmetric NAT. This scenario will still require a TURN server, because there is just no way of exchanging ever-changing combinations of IP + port. This will most likely apply to peers connected by cellular network or if just one peer is behind a local router.
-- Topology. Connecting everyone with everyone is infeasable when each connection is initialized by hand. A star topology with a dedicated host-player solves this (but requires additional logic not implemented here).
-- Capacity. QR codes can be too small to contain all data. Either some candidates are omitted or multiple codes must be scanned.
-- Tight timeout. Some browsers fail the connection on purpose after a set amount of time, making manual exchange unnecessary difficult. Firefox only allows 5 secondy by default (customizable at `media.peerconnection.ice.trickle_grace_period`)
+## how it works
 
-## Inspiration
-Several other repos already use this mechanism:
-- [serverless-webrtc-qrcode](https://github.com/fta2012/serverless-webrtc-qrcode)
-- [webrtc-qr](https://github.com/AquiGorka/webrtc-qr)
-- [webrtc-qr-signaling-channel](https://github.com/TomasHubelbauer/webrtc-qr-signaling-channel)
+Host
+1. pc = new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]})
+2. sendCh = pc.createDataChannel('fromhost')
+3. offer = await pc.createOffer(); await pc.setLocalDescription(offer)
+4. wait iceGatheringState === 'complete' or 1500ms timeout
+5. invite = btoa(JSON.stringify(pc.localDescription))
+  joinUrl = new URL('join-dark-no-cdn.html', location.href) + '?invite=' + encodeURIComponent(invite)
+  drawQRToCanvas(qr, joinUrl)  // QR now links to join page
 
-However they only provide proof of concept and not a simple package anyone can use.
+Join
+1. ?invite= → remoteDesc = JSON.parse(atob(invite))
+2. pc = new RTCPeerConnection(CONFIG)
+3. sendCh = pc.createDataChannel('fromuser')
+4. await pc.setRemoteDescription(remoteDesc)
+5. answer = await pc.createAnswer(); await pc.setLocalDescription(answer)
+6. wait gathering → accept = btoa(JSON.stringify(pc.localDescription)) → QR for host
+
+Connect
+- Host scans accept QR → setRemoteDescription(accept)
+- connectionState: connecting → connected
+- dataChannel.onmessage → chat enabled
+
+QR lib: Kazuhiko Arase MIT inlined. No CDN. BarcodeDetector for scanning with manual paste fallback.
+
+---
+
+## usage
+
+Open host-dark-no-cdn.html → Create invite → QR appears.
+
+P2P offer generated • encrypted • local • 14:32:10
+
+On joiner device, open join-dark-no-cdn.html?invite=<base64> or paste invite.
+
+Joiner shows accept QR → host presses Scan accept → points camera.
+
+Both see:
+
+Connected successfully @ <timestamp>
+Live
+
+Chat: Me: white/right • Peer: translucent/left • system: dashed center.
+
+---
+
+## security
+
+- Offer/answer are standard SDP, base64 only. No server.
+- After ICE, direct P2P RTCDataChannel — encrypted by DTLS (browser built-in).
+- STUN stun.l.google.com:19302 used only for NAT traversal, not relay. No TURN.
+- Works offline on same LAN after initial STUN if host candidates include host candidates.
+
+This is a serious local P2P solution, not a mock. Real offer, real answer, real dataChannel.
+
+---
+
+## no cdn verification
+
+Verification — zero external src, href, or import:
+
+- external src count: 0
+- external href count: 0
+- external import count: 0
+- external stylesheet count: 0
+
+Only stun: protocol remains.
+
+---
+
+## customization
+
+- Change STUN: CONFIG.iceServers
+- Change gathering timeout: 1500 ms in Promise
+- Change QR ECC: QRCodeModel(0,0) → 0=M, 1=L, 2=H, 3=Q
+- Colors: :root vars --bg, --card, --border, --text, --muted
+
+---
+
+## license
+
+QR generator MIT Kazuhiko Arase — inlined.
+WebRTC code — public domain, local only.
