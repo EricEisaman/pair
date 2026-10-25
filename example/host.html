@@ -1,83 +1,43 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
-<title>Host : WebRTC via QR</title>
-<style>
-:root{--bg:#0a0a0b;--card:rgba(255,255,255,0.04);--card2:rgba(255,255,255,0.06);--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);--text:#fafafa;--muted:#a1a1aa;--muted2:#71717a;--white:#fff;--black:#0a0a0b;--input:#18181b;--radius:20px}
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Host — WebRTC via QR</title><style>
+:root{--bg:#0a0a0b;--card:rgba(255,255,255,0.04);--card2:rgba(255,255,255,0.06);--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);--text:#fafafa;--muted:#a1a1aa;--muted2:#71717a;--white:#fff;--black:#0a0a0b;--input:#18181b}
 *{box-sizing:border-box}html,body{height:100%}
-body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,Inter,SF Pro Display,Segoe UI,Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;overflow-x:hidden}
-body::before{content:"";position:fixed;inset:0;background:radial-gradient(1200px 600px at 20% -10%, rgba(120,119,198,0.15), transparent 60%),radial-gradient(1000px 500px at 80% -20%, rgba(255,119,198,0.12), transparent 60%);pointer-events:none;z-index:-2}
-body::after{content:"";position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);background-size:32px 32px;mask-image:radial-gradient(ellipse at center, black 40%, transparent 80%);pointer-events:none;z-index:-1}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,Inter,SF Pro Display,Segoe UI,Roboto,sans-serif}
 .shell{max-width:720px;margin:0 auto;padding:32px 20px 64px}
 .eyebrow{font-family:ui-monospace,monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted2);display:flex;align-items:center;gap:10px;margin-bottom:16px}
 .eyebrow::before{content:"";width:6px;height:6px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,0.15)}
-h1{font-size:34px;font-weight:650;letter-spacing:-0.03em;line-height:1.1;margin:0 0 10px}
+h1{font-size:34px;font-weight:650;letter-spacing:-0.03em;margin:0 0 10px}
 .desc{color:var(--muted);font-size:14px;line-height:1.6;max-width:560px;margin:0 0 28px}
 .card{background:var(--card);border:1px solid var(--border);border-radius:20px;backdrop-filter:blur(16px)}
-.card-pad{padding:20px}.card-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.card-pad{padding:20px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
 .card-label{font-size:11px;font-family:ui-monospace,monospace;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted2)}
 .status{display:flex;align-items:center;gap:8px;font-size:11px;font-family:ui-monospace,monospace;text-transform:uppercase;color:var(--muted)}
-.status-dot{width:7px;height:7px;border-radius:50%;background:var(--muted2);transition:all .3s}
-.status-dot[data-state="creating"]{background:#f59e0b;box-shadow:0 0 0 4px rgba(245,158,11,.15)}
-.status-dot[data-state="waiting"]{background:#3b82f6;box-shadow:0 0 0 4px rgba(59,130,246,.15)}
-.status-dot[data-state="connecting"]{background:#eab308;box-shadow:0 0 0 4px rgba(234,179,8,.2);animation:pulse 1.2s infinite}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--muted2)}
+.status-dot[data-state="creating"]{background:#f59e0b}
+.status-dot[data-state="waiting"]{background:#3b82f6}
+.status-dot[data-state="connecting"]{background:#eab308}
 .status-dot[data-state="connected"]{background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.2)}
-.status-dot[data-state="failed"]{background:#ef4444;box-shadow:0 0 0 4px rgba(239,68,68,.15)}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
-.invite-grid{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
-.invite-copy{flex:1;min-width:200px}.invite-copy h3{margin:0 0 6px;font-size:15px;font-weight:600}
-.invite-copy p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
-#inviteButton{appearance:none;border:0;cursor:pointer;background:var(--white);color:var(--black);font-size:14px;font-weight:600;padding:12px 20px;border-radius:9999px;display:inline-flex;align-items:center;gap:8px;transition:transform .15s,box-shadow .15s}
-#inviteButton:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(255,255,255,.12)}
+#inviteButton{appearance:none;border:0;cursor:pointer;background:#fff;color:#000;font-size:14px;font-weight:600;padding:12px 20px;border-radius:9999px}
 .chat-row{display:flex;gap:10px;align-items:center;margin-bottom:16px}
-#chat{flex:1;appearance:none;background:var(--input);color:var(--text);border:1px solid var(--border);border-radius:9999px;padding:12px 16px;font-size:14px;outline:none}
-#chat:focus{border-color:var(--border2)}#chat:disabled{opacity:.5}
-#send{appearance:none;border:1px solid var(--border);cursor:pointer;background:var(--card2);color:var(--text);width:44px;height:44px;border-radius:9999px;display:inline-flex;align-items:center;justify-content:center;transition:all .15s}
-#send:hover{background:rgba(255,255,255,.1);border-color:var(--border2)}
-#messages{display:flex;flex-direction:column;gap:10px;min-height:64px}
-#messages:empty::before{content:"No messages yet. Invite a peer to start.";font-size:13px;color:var(--muted2);text-align:center;padding:24px 12px;border:1px dashed var(--border);border-radius:12px}
-#messages p{margin:0;padding:10px 14px;border-radius:16px;font-size:13.5px;max-width:78%;animation:msgIn .25s ease;word-break:break-word}
-@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-#messages p.me{align-self:flex-end;background:var(--white);color:var(--black);border-bottom-right-radius:6px}
-#messages p.peer{align-self:flex-start;background:rgba(255,255,255,.08);border:1px solid var(--border);border-bottom-left-radius:6px}
-#messages p.system{align-self:center;background:transparent;border:1px dashed var(--border);color:var(--muted2);font-size:12px;font-family:ui-monospace,monospace;padding:6px 12px;border-radius:999px}
-dialog#dialog{background:#151517;color:var(--text);border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:24px;max-width:380px;width:calc(100% - 32px);box-shadow:0 24px 64px rgba(0,0,0,.6);margin:auto}
-dialog#dialog::backdrop{background:rgba(0,0,0,.6);backdrop-filter:blur(12px)}
-dialog#dialog:not([open]){display:none}.dialog-inner{display:flex;flex-direction:column;gap:18px}
-#h2{font-size:17px;font-weight:600;margin:0}
-.qr-wrap{background:#fff;padding:16px;border-radius:16px;display:flex;align-items:center;justify-content:center;min-height:312px}
-#qr{width:100%;max-width:280px;height:auto;aspect-ratio:1;display:block;border-radius:8px}
-.dialog-actions{display:flex;gap:10px}
-#scanButton,#closeButton{appearance:none;border:1px solid var(--border);cursor:pointer;font-size:14px;font-weight:500;padding:11px 16px;border-radius:9999px;flex:1;transition:all .15s}
-#scanButton{background:var(--white);color:var(--black);border-color:transparent;font-weight:600}
-#scanButton:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(255,255,255,.12)}
-#closeButton{background:rgba(255,255,255,.06);color:var(--text)}
-.dialog-hint{font-size:11px;color:var(--muted2);line-height:1.5;text-align:center;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-family:ui-monospace,monospace}
-.footer{margin-top:28px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--muted2);font-family:ui-monospace,monospace}
-.manual-area{display:flex;flex-direction:column;gap:8px}
-.manual-area textarea{width:100%;min-height:80px;background:var(--input);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-family:ui-monospace,monospace;font-size:11px}
-</style>
-</head>
-<body>
-<div class="shell">
-  <div class="eyebrow">WEBRTC / QR • P2P • HOST</div>
-  <h1>Host</h1>
-  <p class="desc">Serious local P2P. Create an invite, QR links to <code>ericeisaman.github.io/pair/examples/join.html</code>. No CDN, no relay after handshake.</p>
-  <div class="card card-pad" style="margin-bottom:16px">
-    <div class="card-header"><div class="card-label">Invite</div><div class="status"><span class="status-dot" id="statusDot" data-state="idle"></span><span id="statusText">Idle</span></div></div>
-    <div class="invite-grid"><div class="invite-copy"><h3>Start a secure session</h3><p>Generates real RTCPeerConnection offer, encodes as <code>join.html?invite=...</code>. Joiner scans to connect.</p></div><button id="inviteButton" type="button">Create invite</button></div>
-  </div>
-  <div class="card card-pad">
-    <div class="card-header"><div class="card-label">Messages</div><div id="liveLabel" style="font-size:11px;color:var(--muted2);font-family:ui-monospace,monospace">Waiting</div></div>
-    <div class="chat-row"><input type="text" id="chat" placeholder="Not connected" disabled autocomplete="off"/><button id="send" type="button" aria-label="Send"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg></button></div>
-    <div id="messages"></div>
-  </div>
-  <div class="footer"><div>ICE: stun:stun.l.google.com:19302 • Encrypted dataChannel • No signaling</div><div>ericeisaman.github.io/pair/examples/host.html</div></div>
-</div>
-<dialog id="dialog"><div class="dialog-inner"><h2 id="h2">Invite • scan with joiner</h2><div class="qr-wrap"><canvas id="qr" width="512" height="512"></canvas></div><div id="offerMeta" class="dialog-hint">P2P offer generated • encrypted • local</div><div class="dialog-actions"><button id="scanButton" type="button">Scan accept</button><button id="closeButton" type="button">Close</button></div><div class="manual-area" id="manualArea" style="display:none"><textarea id="manualInput" placeholder="Paste accept code if camera fails"></textarea><button id="manualConfirm" type="button" style="appearance:none;background:rgba(255,255,255,.08);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:9999px;font-size:12px;cursor:pointer">Confirm pasted code</button></div></div></dialog>
-<script>// QR Generator - Kazuhiko Arase MIT - inlined, no CDN
+#chat{flex:1;background:#18181b;color:#fafafa;border:1px solid rgba(255,255,255,0.08);border-radius:9999px;padding:12px 16px}
+#send{width:44px;height:44px;border-radius:9999px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.06);color:#fafafa}
+#messages{display:flex;flex-direction:column;gap:10px}
+#messages p{margin:0;padding:10px 14px;border-radius:16px;max-width:78%}
+#messages p.me{align-self:flex-end;background:#fff;color:#000;border-bottom-right-radius:6px}
+#messages p.peer{align-self:flex-start;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.08);border-bottom-left-radius:6px}
+#messages p.system{align-self:center;border:1px dashed rgba(255,255,255,0.08);color:#71717a;font-size:12px;font-family:ui-monospace;padding:6px 12px;border-radius:999px}
+dialog#dialog{background:#151517;color:#fafafa;border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:24px;max-width:380px;width:calc(100% - 32px);margin:auto}
+dialog#dialog::backdrop{background:rgba(0,0,0,0.6);backdrop-filter:blur(12px)}
+.qr-wrap{background:#fff;padding:16px;border-radius:16px;display:flex;justify-content:center;min-height:312px}
+#qr{width:100%;max-width:280px;aspect-ratio:1;display:block;border-radius:8px}
+.dialog-actions{display:flex;gap:10px;margin-top:12px}
+#scanButton,#closeButton{flex:1;padding:11px 16px;border-radius:9999px;border:1px solid rgba(255,255,255,0.08);cursor:pointer}
+#scanButton{background:#fff;color:#000;font-weight:600}
+#closeButton{background:rgba(255,255,255,0.06);color:#fafafa}
+.dialog-hint{font-size:11px;color:#71717a;text-align:center;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px;margin-top:12px;font-family:ui-monospace}
+.footer{margin-top:28px;display:flex;justify-content:space-between;flex-wrap:wrap;font-size:11px;color:#71717a;font-family:ui-monospace}
+</style></head><body><div class="shell"><div class="eyebrow">WEBRTC / QR • P2P • HOST</div><h1>Host</h1><p class="desc">Serious local P2P. QR links to ericeisaman.github.io/pair/examples/join.html?invite=... No CDN.</p><div class="card card-pad" style="margin-bottom:16px"><div class="card-header"><div class="card-label">Invite</div><div class="status"><span class="status-dot" id="statusDot" data-state="idle"></span><span id="statusText">Idle</span></div></div><div class="invite-grid"><div><h3 style="margin:0 0 6px;font-size:15px">Start session</h3><p style="margin:0;color:#a1a1aa;font-size:13px">Real RTCPeerConnection offer</p></div><button id="inviteButton" type="button">Create invite</button></div></div><div class="card card-pad"><div class="card-header"><div class="card-label">Messages</div><div id="liveLabel" style="font-size:11px;color:#71717a;font-family:ui-monospace">Waiting</div></div><div class="chat-row"><input id="chat" placeholder="Not connected" disabled/><button id="send" type="button">Send</button></div><div id="messages"></div></div><div class="footer"><div>ICE: stun:stun.l.google.com:19302</div><div>ericeisaman.github.io/pair/examples/host.html</div></div></div><dialog id="dialog"><div><h2 id="h2">Invite</h2><div class="qr-wrap"><canvas id="qr" width="512" height="512"></canvas></div><div id="offerMeta" class="dialog-hint">P2P offer generated</div><div class="dialog-actions"><button id="scanButton">Scan accept</button><button id="closeButton">Close</button></div><div id="manualArea" style="display:none;margin-top:12px"><textarea id="manualInput" placeholder="Paste accept" style="width:100%;min-height:80px;background:#18181b;color:#fafafa;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px"></textarea><button id="manualConfirm" style="margin-top:8px;width:100%;padding:10px;border-radius:9999px;background:rgba(255,255,255,0.08);color:#fafafa;border:1px solid rgba(255,255,255,0.08)">Confirm</button></div></div></dialog><script>
+// QR Generator - Kazuhiko Arase MIT - inlined, no CDN
 (function(){
 var QRUtil={PATTERN_POSITION_TABLE:[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,84,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],G15:1335,G18:7973,G15_MASK:21522,getBCHTypeInfo:function(d){var e=d<<10;while(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G15)>=0)e^=(QRUtil.G15<<(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G15)));return((d<<10)|e)^QRUtil.G15_MASK},getBCHTypeNumber:function(d){var e=d<<12;while(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G18)>=0)e^=(QRUtil.G18<<(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G18)));return(d<<12)|e},getBCHDigit:function(d){var e=0;while(d!=0){e++;d>>>=1}return e},getPatternPosition:function(t,n){return QRUtil.PATTERN_POSITION_TABLE[t-1][n]},getMask:function(t,i,j){switch(t){case 0:return(i+j)%2==0;case 1:return i%2==0;case 2:return j%3==0;case 3:return(i+j)%3==0;case 4:return(Math.floor(i/2)+Math.floor(j/3))%2==0;case 5:return(i*j)%2+(i*j)%3==0;case 6:return((i*j)%2+(i*j)%3)%2==0;case 7:return((i*j)%3+(i+j)%2)%2==0;default:throw new Error("bad")}},getErrorCorrectPolynomial:function(e){var a=new QRPolynomial([1],0);for(var i=0;i<e;i++)a=a.multiply(new QRPolynomial([1,QRMath.gexp(i)],0));return a},getLengthInBits:function(t,e){return e<10?8:16},getLostPoint:function(t){var n=t.getModuleCount(),e=0;for(var r=0;r<n;r++)for(var o=0;o<n;o++){var l=0,s=t.isDark(r,o);for(var u=-1;u<=1;u++)if(!(r+u<0||n<=r+u))for(var a=-1;a<=1;a++)if(!(o+a<0||n<=o+a)&&(u!=0||a!=0)&&s==t.isDark(r+u,o+a))l++;l>5&&(e+=3+l-5)}for(var r=0;r<n-1;r++)for(var o=0;o<n-1;o++){var c=0;t.isDark(r,o)&&c++;t.isDark(r+1,o)&&c++;t.isDark(r,o+1)&&c++;t.isDark(r+1,o+1)&&c++;(c==0||c==4)&&(e+=3)}for(var r=0;r<n;r++)for(var o=0;o<n-6;o++)t.isDark(r,o)&&!t.isDark(r,o+1)&&t.isDark(r,o+2)&&t.isDark(r,o+3)&&t.isDark(r,o+4)&&!t.isDark(r,o+5)&&t.isDark(r,o+6)&&(e+=40);for(var o=0;o<n;o++)for(var r=0;r<n-6;r++)t.isDark(r,o)&&!t.isDark(r+1,o)&&t.isDark(r+2,o)&&t.isDark(r+3,o)&&t.isDark(r+4,o)&&!t.isDark(r+5,o)&&t.isDark(r+6,o)&&(e+=40);var h=0;for(var o=0;o<n;o++)for(var r=0;r<n;r++)t.isDark(r,o)&&h++;return e+10*Math.abs(100*h/n/n-50)/5}};
 var QRMath={glog:function(n){return QRMath.LOG_TABLE[n]},gexp:function(n){while(n<0)n+=255;while(n>=256)n-=255;return QRMath.EXP_TABLE[n]},EXP_TABLE:new Array(256),LOG_TABLE:new Array(256)};for(var i=0;i<8;i++)QRMath.EXP_TABLE[i]=1<<i;for(var i=8;i<256;i++)QRMath.EXP_TABLE[i]=QRMath.EXP_TABLE[i-4]^QRMath.EXP_TABLE[i-5]^QRMath.EXP_TABLE[i-6]^QRMath.EXP_TABLE[i-8];for(var i=0;i<255;i++)QRMath.LOG_TABLE[QRMath.EXP_TABLE[i]]=i;
@@ -96,51 +56,150 @@ QRCodeModel.createData=function(t,e,list){var rs=QRRSBlock.getRSBlocks(t);var bu
 QRCodeModel.createBytes=function(buf,rs){var off=0,maxDc=0,maxEc=0,dc=new Array(rs.length),ec=new Array(rs.length);for(var r=0;r<rs.length;r++){var dcCount=rs[r].dataCount,ecCount=rs[r].totalCount-dcCount;maxDc=Math.max(maxDc,dcCount);maxEc=Math.max(maxEc,ecCount);dc[r]=new Array(dcCount);for(var i=0;i<dc[r].length;i++)dc[r][i]=0xff&buf.buffer[i+off];off+=dcCount;var rsPoly=QRUtil.getErrorCorrectPolynomial(ecCount);var raw=new QRPolynomial(dc[r],rsPoly.getLength()-1);var mod=raw.mod(rsPoly);ec[r]=new Array(rsPoly.getLength()-1);for(var i=0;i<ec[r].length;i++){var mi=i+mod.getLength()-ec[r].length;ec[r][i]=mi>=0?mod.get(mi):0}}var total=0;for(var i=0;i<rs.length;i++)total+=rs[i].totalCount;var data=new Array(total),idx=0;for(var i=0;i<maxDc;i++)for(var r=0;r<rs.length;r++)if(i<dc[r].length)data[idx++]=dc[r][i];for(var i=0;i<maxEc;i++)for(var r=0;r<rs.length;r++)if(i<ec[r].length)data[idx++]=ec[r][i];return data};
 window._qrgen=function(txt){var m=new QRCodeModel(0,0);m.addData(txt);m.make();return m};
 })();
-function drawQRToCanvas(c,txt){var m=window._qrgen(txt);var cnt=m.getModuleCount();var ctx=c.getContext('2d');var s=c.width,mar=6,cell=(s-mar*2)/cnt;ctx.fillStyle='#fff';ctx.fillRect(0,0,s,s);ctx.fillStyle='#000';for(var r=0;r<cnt;r++)for(var cc=0;cc<cnt;cc++)if(m.isDark(r,cc))ctx.fillRect(mar+cc*cell,mar+r*cell,Math.ceil(cell),Math.ceil(cell));}
-(function(){
-const CONFIG={iceServers:[{urls:"stun:stun.l.google.com:19302"}]};
-const st=document.getElementById('statusText'), msgs=document.getElementById('messages'), chat=document.getElementById('chat'), send=document.getElementById('send');
-const inviteInput=document.getElementById('inviteInput'), genBtn=document.getElementById('generateButton'), qr=document.getElementById('qr'), dialog=document.getElementById('dialog'), closeBtn=document.getElementById('closeButton');
-function enc(o){return btoa(JSON.stringify(o))}function dec(s){return JSON.parse(atob(s))}
-function addMsg(t,c){var p=document.createElement('p');p.className=c;p.textContent=t;msgs.appendChild(p)}
-let pc=null,sendCh=null,recvCh=null;
-async function acceptInvite(code){
-if(pc){try{pc.close()}catch(e){}}pc=new RTCPeerConnection(CONFIG);sendCh=pc.createDataChannel('fromuser');sendCh.onopen=()=>{st.textContent='Connected';addMsg('Connected successfully @ '+Date.now(),'system');chat.disabled=false};pc.onconnectionstatechange=()=>{st.textContent=pc.connectionState};pc.ondatachannel=(e)=>{recvCh=e.channel;recvCh.onmessage=(ev)=>{try{var m=JSON.parse(ev.data);addMsg(m.user+': '+m.text,'peer')}catch(_){addMsg(ev.data,'peer')}};chat.disabled=false};var rem=dec(code.trim());await pc.setRemoteDescription(rem);var ans=await pc.createAnswer();await pc.setLocalDescription(ans);await new Promise(r=>{if(pc.iceGatheringState==='complete')return r();let d=false;var to=setTimeout(()=>{if(!d){d=true;r()}},1500);pc.addEventListener('icecandidate',ev=>{if(!ev.candidate&&!d){d=true;clearTimeout(to);r()}});pc.addEventListener('icegatheringstatechange',()=>{if(pc.iceGatheringState==='complete'&&!d){d=true;clearTimeout(to);r()}})});return enc(pc.localDescription);
+function drawQRToCanvas(c,txt){
+  var m=window._qrgen(txt);
+  var cnt=m.getModuleCount();
+  var ctx=c.getContext('2d');
+  var s=c.width,mar=6,cell=(s-mar*2)/cnt;
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,s,s);
+  ctx.fillStyle='#000';
+  for(var r=0;r<cnt;r++)for(var cc=0;cc<cnt;cc++)if(m.isDark(r,cc))ctx.fillRect(mar+cc*cell,mar+r*cell,Math.ceil(cell),Math.ceil(cell));
 }
-(function(){
 const CONFIG={iceServers:[{urls:"stun:stun.l.google.com:19302"}]};
-const dot=document.getElementById('statusDot'), stxt=document.getElementById('statusText'), live=document.getElementById('liveLabel');
-const inviteBtn=document.getElementById('inviteButton'), dialog=document.getElementById('dialog'), h2=document.getElementById('h2');
-const qr=document.getElementById('qr'), scanBtn=document.getElementById('scanButton'), closeBtn=document.getElementById('closeButton');
-const chat=document.getElementById('chat'), send=document.getElementById('send'), msgs=document.getElementById('messages');
-const manualArea=document.getElementById('manualArea'), manualInput=document.getElementById('manualInput'), manualConfirm=document.getElementById('manualConfirm'), meta=document.getElementById('offerMeta');
-function setStatus(s,t){dot.dataset.state=s;stxt.textContent=t}
-function appendMessage(txt,cls){if(!cls){cls=txt.startsWith('Me:')?'me':(txt.startsWith('Connecting')||txt.startsWith('Connected')||txt.toLowerCase().includes('fail')?'system':'peer')}var p=document.createElement('p');p.className=cls;p.textContent=txt;msgs.appendChild(p);msgs.scrollTop=msgs.scrollHeight}
-function enc(o){return btoa(JSON.stringify(o))}function dec(s){return JSON.parse(atob(s))}
-let pc=null,sendCh=null,recvCh=null,stream=null,video=null,scanning=false,detector=null,raf=null;
-if('BarcodeDetector' in window){try{detector=new BarcodeDetector({formats:['qr_code']})}catch(e){}}
-function reset(){if(pc){try{pc.close()}catch(e){}}pc=sendCh=recvCh=null}
+const dot=document.getElementById('statusDot');
+const st=document.getElementById('statusText');
+const live=document.getElementById('liveLabel');
+const inviteBtn=document.getElementById('inviteButton');
+const dialog=document.getElementById('dialog');
+const qr=document.getElementById('qr');
+const scanBtn=document.getElementById('scanButton');
+const closeBtn=document.getElementById('closeButton');
+const chat=document.getElementById('chat');
+const sendBtn=document.getElementById('send');
+const msgs=document.getElementById('messages');
+const manualArea=document.getElementById('manualArea');
+const manualInput=document.getElementById('manualInput');
+const manualConfirm=document.getElementById('manualConfirm');
+const meta=document.getElementById('offerMeta');
+function setStatus(s,t){dot.dataset.state=s;st.textContent=t;}
+function addMsg(t,c){var p=document.createElement('p');p.className=c||'peer';p.textContent=t;msgs.appendChild(p);}
+function enc(o){return btoa(JSON.stringify(o));}
+function dec(s){return JSON.parse(atob(s));}
+let pc=null,sendCh=null,recvCh=null,stream=null,video=null,det=null,raf=null,scanning=false;
+if('BarcodeDetector' in window){try{det=new BarcodeDetector({formats:['qr_code']});}catch(e){}}
 async function createInvite(){
-  reset();setStatus('creating','Creating...');inviteBtn.disabled=true;
-  pc=new RTCPeerConnection(CONFIG);
-  sendCh=pc.createDataChannel('fromhost');
-  sendCh.onopen=()=>{setStatus('connected','Connected');live.textContent='Live';chat.placeholder='Enter message';chat.disabled=false;appendMessage('Connected successfully @ '+Date.now(),'system')};
-  pc.onconnectionstatechange=()=>{var s=pc.connectionState;if(s==='connecting'){setStatus('connecting','Connecting...');try{dialog.close()}catch(e){}appendMessage('Connecting...','system')}else if(s==='connected')setStatus('connected','Connected');else if(s==='failed'||s==='disconnected'){setStatus('failed',s);appendMessage('Connection '+s,'system')}};
-  pc.ondatachannel=(e)=>{recvCh=e.channel;recvCh.onmessage=(ev)=>{try{var m=JSON.parse(ev.data);appendMessage((m.user||'Peer')+': '+(m.text||ev.data),'peer')}catch(_){appendMessage(ev.data,'peer')}};chat.placeholder='Enter message';chat.disabled=false;live.textContent='Live';appendMessage('Connected successfully @ '+Date.now(),'system')};
-  var offer=await pc.createOffer();await pc.setLocalDescription(offer);
-  await new Promise(r=>{if(pc.iceGatheringState==='complete')return r();let done=false;var to=setTimeout(()=>{if(!done){done=true;r()}},1500);pc.addEventListener('icegatheringstatechange',()=>{if(pc.iceGatheringState==='complete'&&!done){done=true;clearTimeout(to);r()}});pc.addEventListener('icecandidate',ev=>{if(!ev.candidate&&!done){done=true;clearTimeout(to);r()}})});
-  return enc(pc.localDescription);
+ if(pc){try{pc.close();}catch(e){}}
+ pc=new RTCPeerConnection(CONFIG);
+ sendCh=pc.createDataChannel('fromhost');
+ sendCh.onopen=function(){
+   setStatus('connected','Connected');
+   live.textContent='Live';
+   addMsg('Connected successfully @ '+Date.now(),'system');
+   chat.disabled=false;
+ };
+ pc.onconnectionstatechange=function(){
+   st.textContent=pc.connectionState;
+   if(pc.connectionState==='connected')setStatus('connected','Connected');
+ };
+ pc.ondatachannel=function(e){
+   recvCh=e.channel;
+   recvCh.onmessage=function(ev){
+     try{var m=JSON.parse(ev.data);addMsg(m.user+': '+m.text,'peer');}catch(_){addMsg(ev.data,'peer');}
+   };
+   chat.disabled=false;
+   live.textContent='Live';
+ };
+ const offer=await pc.createOffer();
+ await pc.setLocalDescription(offer);
+ await new Promise(function(r){
+   if(pc.iceGatheringState==='complete')return r();
+   var done=false;
+   var to=setTimeout(function(){if(!done){done=true;r();}},1500);
+   pc.addEventListener('icecandidate',function(ev){if(!ev.candidate&&!done){done=true;clearTimeout(to);r();}});
+   pc.addEventListener('icegatheringstatechange',function(){if(pc.iceGatheringState==='complete'&&!done){done=true;clearTimeout(to);r();}});
+ });
+ return enc(pc.localDescription);
 }
-function onSend(){if(!chat.value.trim())return;var txt=chat.value;appendMessage('Me: '+txt,'me');var payload=JSON.stringify({user:'Host',text:txt});try{if(sendCh&&sendCh.readyState==='open')sendCh.send(payload);else if(recvCh)recvCh.send(payload)}catch(e){appendMessage('Send failed','system')}chat.value='';}
-send.addEventListener('click',onSend);chat.addEventListener('keydown',e=>{if(e.key==='Enter')onSend()});
-inviteBtn.addEventListener('click',async()=>{try{var inv=await createInvite();var joinUrl='https://ericeisaman.github.io/pair/examples/join.html?invite='+encodeURIComponent(inv);drawQRToCanvas(document.getElementById('qr'),joinUrl);h2.textContent='Scanned by joinee';meta.textContent='P2P offer • '+joinUrl.slice(0,72)+'… • '+new Date().toLocaleTimeString()+' • local';dialog.showModal();setStatus('waiting','Waiting for scan');manualArea.style.display='none'}catch(e){setStatus('failed','Failed');appendMessage('Failed: '+e,'system');inviteBtn.disabled=false}});
-closeBtn.addEventListener('click',()=>{stopScan();dialog.close();if(!pc||pc.connectionState!=='connected'){setStatus('idle','Idle');inviteBtn.disabled=false}});
-function stopScan(){scanning=false;if(raf)cancelAnimationFrame(raf);raf=null;if(video){try{video.pause()}catch(e){}video.srcObject=null;video=null}if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}scanBtn.disabled=false}
-async function handleAccept(s){try{var desc=dec(s.trim());if(!pc)throw new Error('No PC');await pc.setRemoteDescription(desc);stopScan();var wrap=document.querySelector('.qr-wrap');wrap.innerHTML='';var c=document.createElement('canvas');c.id='qr';c.width=512;c.height=512;wrap.appendChild(c);setStatus('connecting','Connecting...');appendMessage('Accept applied, connecting...','system');dialog.close();inviteBtn.disabled=false}catch(e){appendMessage('Failed accept: '+e,'system');setStatus('failed','Failed')}}
-scanBtn.addEventListener('click',async()=>{h2.textContent='Scan accept code';scanBtn.disabled=true;manualArea.style.display='flex';scanning=true;var wrap=document.querySelector('.qr-wrap');wrap.innerHTML='';video=document.createElement('video');video.autoplay=true;video.playsInline=true;video.muted=true;video.style.width='100%';video.style.borderRadius='12px';video.style.background='#000';wrap.appendChild(video);try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',aspectRatio:1}});video.srcObject=stream;await video.play();var sc=document.createElement('canvas');var sctx=sc.getContext('2d',{willReadFrequently:true});async function tick(){if(!scanning)return;if(video.readyState>=2){sc.width=video.videoWidth;sc.height=video.videoHeight;sctx.drawImage(video,0,0,sc.width,sc.height);if(detector){try{var codes=await detector.detect(sc);if(codes&&codes[0]){await handleAccept(codes[0].rawValue);return}}catch(e){}}}raf=requestAnimationFrame(tick)}tick()}catch(e){wrap.innerHTML='<div style="color:#000;font-size:12px;padding:20px;text-align:center">Camera failed: '+e+'<br>Use manual paste below.</div>';scanBtn.disabled=false}});
-manualConfirm.addEventListener('click',()=>{var v=manualInput.value.trim();if(v)handleAccept(v)});
-dialog.addEventListener('close',()=>{stopScan();var wrap=document.querySelector('.qr-wrap');if(!wrap.querySelector('#qr')){wrap.innerHTML='';var c=document.createElement('canvas');c.id='qr';c.width=512;c.height=512;wrap.appendChild(c)}});
-})();
-</script>
-</body>
-</html>
+inviteBtn.addEventListener('click', async function(){
+ try{
+   setStatus('creating','Creating...');
+   inviteBtn.disabled=true;
+   var inv=await createInvite();
+   var joinUrl='https://ericeisaman.github.io/pair/examples/join.html?invite='+encodeURIComponent(inv);
+   drawQRToCanvas(qr, joinUrl);
+   meta.textContent='P2P offer • '+joinUrl.slice(0,70)+'... • '+new Date().toLocaleTimeString();
+   dialog.showModal();
+   setStatus('waiting','Waiting for scan');
+   if(manualArea)manualArea.style.display='none';
+ }catch(e){
+   setStatus('failed','Failed');
+   addMsg('Failed: '+e,'system');
+   inviteBtn.disabled=false;
+ }
+});
+closeBtn.addEventListener('click', function(){
+ dialog.close();
+ setStatus('idle','Idle');
+ inviteBtn.disabled=false;
+});
+sendBtn.addEventListener('click', function(){
+ if(!chat.value.trim())return;
+ addMsg('Me: '+chat.value,'me');
+ var payload=JSON.stringify({user:'Host',text:chat.value});
+ try{if(sendCh&&sendCh.readyState==='open')sendCh.send(payload);else if(recvCh)recvCh.send(payload);}catch(e){}
+ chat.value='';
+});
+chat.addEventListener('keydown', function(e){if(e.key==='Enter'){sendBtn.click();}});
+scanBtn.addEventListener('click', async function(){
+ if(manualArea)manualArea.style.display='block';
+ scanning=true;
+ var wrap=document.querySelector('.qr-wrap');
+ wrap.innerHTML='';
+ video=document.createElement('video');
+ video.autoplay=true;video.playsInline=true;video.muted=true;
+ video.style.width='100%';video.style.borderRadius='12px';video.style.background='#000';
+ wrap.appendChild(video);
+ try{
+   stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+   video.srcObject=stream;
+   await video.play();
+   var sc=document.createElement('canvas');
+   var sctx=sc.getContext('2d',{willReadFrequently:true});
+   async function tick(){
+     if(!scanning)return;
+     sc.width=video.videoWidth;sc.height=video.videoHeight;
+     sctx.drawImage(video,0,0,sc.width,sc.height);
+     if(det){
+       try{
+         var codes=await det.detect(sc);
+         if(codes&&codes[0]){
+           var desc=dec(codes[0].rawValue.trim());
+           await pc.setRemoteDescription(desc);
+           scanning=false;
+           dialog.close();
+           if(video){video.pause();video.srcObject=null;}
+           if(stream){stream.getTracks().forEach(function(t){t.stop();});}
+           setStatus('connected','Connected');
+           return;
+         }
+       }catch(e){}
+     }
+     raf=requestAnimationFrame(tick);
+   }
+   tick();
+ }catch(e){
+   wrap.innerHTML='<div style="color:#000;padding:20px">Camera failed: '+e+'</div>';
+ }
+});
+if(manualConfirm){
+ manualConfirm.addEventListener('click', async function(){
+   try{
+     var d=dec(manualInput.value.trim());
+     await pc.setRemoteDescription(d);
+     scanning=false;
+     dialog.close();
+     setStatus('connected','Connected');
+   }catch(e){addMsg('Failed accept: '+e,'system');}
+ });
+}
+</script></body></html>
