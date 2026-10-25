@@ -1,4 +1,4 @@
-# webrtc-via-qr — local p2p
+# webrtc-via-qr : local p2p
 
 > WEBRTC / QR • P2P • NO SIGNALING
 > Host creates an offer → QR → Joiner scans → accept QR → direct encrypted dataChannel. No relay after handshake.
