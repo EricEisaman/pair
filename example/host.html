@@ -32,7 +32,7 @@ h1{font-size:34px;font-weight:650;letter-spacing:-0.03em;margin:0 0 10px}
 dialog#dialog{background:#151517;color:#fafafa;border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:24px;max-width:420px;width:calc(100% - 32px);margin:auto}
 dialog#dialog::backdrop{background:rgba(0,0,0,0.6);backdrop-filter:blur(12px)}
 .qr-wrap{background:#fff;padding:16px;border-radius:16px;display:flex;justify-content:center;min-height:312px}
-#qr{width:100%;max-width:280px;aspect-ratio:1;display:block;border-radius:8px}
+#qr,#qrEnc{width:100%;max-width:280px;aspect-ratio:1;display:block;border-radius:8px}
 .dialog-actions{display:flex;gap:10px;margin-top:12px}
 #scanButton,#closeButton{flex:1;padding:11px 16px;border-radius:9999px;border:1px solid rgba(255,255,255,0.08);cursor:pointer}
 #scanButton{background:#fff;color:#000;font-weight:600}
@@ -42,7 +42,7 @@ dialog#dialog::backdrop{background:rgba(0,0,0,0.6);backdrop-filter:blur(12px)}
 .link-row input{flex:1;background:#18181b;color:#fafafa;border:1px solid rgba(255,255,255,0.08);border-radius:9999px;padding:10px 14px;font-size:12px;font-family:ui-monospace}
 .link-row button{padding:10px 16px;border-radius:9999px;border:0;background:#fff;color:#000;font-weight:600;cursor:pointer}
 .footer{margin-top:28px;display:flex;justify-content:space-between;flex-wrap:wrap;font-size:11px;color:#71717a;font-family:ui-monospace}
-</style></head><body><div class="shell"><div class="eyebrow">WEBRTC / QR • P2P • HOST • AES + URL ACCEPT</div><h1>Host</h1><p class="desc">Same-room = host only offline QR. Internet = STUN + share link + AES encrypted link. Now accepts joiner URL: host.html?accept=... for same-room.</p>
+</style></head><body><div class="shell"><div class="eyebrow">WEBRTC / QR • P2P • HOST • EXAMPLE/</div><h1>Host</h1><p class="desc">Same-room = host only offline QR. Internet = STUN + share link + AES encrypted link. Host accepts joiner URL: host.html?accept=... for same-room.</p>
 <div class="card card-pad" style="margin-bottom:16px">
   <div class="card-header"><div class="card-label">Mode</div><div class="status"><span class="status-dot" id="statusDot" data-state="idle"></span><span id="statusText">Idle</span></div></div>
   <div class="toggle" style="margin-bottom:10px"><button id="modeSame" type="button">Same Room</button><button id="modeInternet" type="button" class="active">Internet (NAT)</button></div>
@@ -63,7 +63,7 @@ dialog#dialog::backdrop{background:rgba(0,0,0,0.6);backdrop-filter:blur(12px)}
 <div class="dialog-actions" style="margin-top:16px"><button id="scanButton">Scan accept</button><button id="closeButton">Close</button></div>
 <div id="manualArea" style="display:none;margin-top:12px"><textarea id="manualInput" placeholder="Paste accept (raw or URL like host.html?accept=...)" style="width:100%;min-height:80px;background:#18181b;color:#fafafa;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px"></textarea><button id="manualConfirm" style="margin-top:8px;width:100%;padding:10px;border-radius:9999px;background:rgba(255,255,255,0.08);color:#fafafa;border:1px solid rgba(255,255,255,0.08)">Confirm</button></div>
 </div></dialog>
-<div class="footer"><div>ICE toggle + AES-GCM + URL accept • rounded 20px</div><div>ericeisaman.github.io/pair/examples/host.html</div></div></div><script>// QR Generator - Kazuhiko Arase MIT - inlined, no CDN
+<div class="footer"><div>ICE toggle + AES-GCM + URL accept • rounded 20px • repo: example/</div><div>ericeisaman.github.io/pair/example/host.html</div></div></div><script>// QR Generator - Kazuhiko Arase MIT - inlined, no CDN
 (function(){
 var QRUtil={PATTERN_POSITION_TABLE:[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,84,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],G15:1335,G18:7973,G15_MASK:21522,getBCHTypeInfo:function(d){var e=d<<10;while(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G15)>=0)e^=(QRUtil.G15<<(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G15)));return((d<<10)|e)^QRUtil.G15_MASK},getBCHTypeNumber:function(d){var e=d<<12;while(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G18)>=0)e^=(QRUtil.G18<<(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G18)));return(d<<12)|e},getBCHDigit:function(d){var e=0;while(d!=0){e++;d>>>=1}return e},getPatternPosition:function(t,n){return QRUtil.PATTERN_POSITION_TABLE[t-1][n]},getMask:function(t,i,j){switch(t){case 0:return(i+j)%2==0;case 1:return i%2==0;case 2:return j%3==0;case 3:return(i+j)%3==0;case 4:return(Math.floor(i/2)+Math.floor(j/3))%2==0;case 5:return(i*j)%2+(i*j)%3==0;case 6:return((i*j)%2+(i*j)%3)%2==0;case 7:return((i*j)%3+(i+j)%2)%2==0;default:throw new Error("bad")}},getErrorCorrectPolynomial:function(e){var a=new QRPolynomial([1],0);for(var i=0;i<e;i++)a=a.multiply(new QRPolynomial([1,QRMath.gexp(i)],0));return a},getLengthInBits:function(t,e){return e<10?8:16},getLostPoint:function(t){var n=t.getModuleCount(),e=0;for(var r=0;r<n;r++)for(var o=0;o<n;o++){var l=0,s=t.isDark(r,o);for(var u=-1;u<=1;u++)if(!(r+u<0||n<=r+u))for(var a=-1;a<=1;a++)if(!(o+a<0||n<=o+a)&&(u!=0||a!=0)&&s==t.isDark(r+u,o+a))l++;l>5&&(e+=3+l-5)}for(var r=0;r<n-1;r++)for(var o=0;o<n-1;o++){var c=0;t.isDark(r,o)&&c++;t.isDark(r+1,o)&&c++;t.isDark(r,o+1)&&c++;t.isDark(r+1,o+1)&&c++;(c==0||c==4)&&(e+=3)}for(var r=0;r<n;r++)for(var o=0;o<n-6;o++)t.isDark(r,o)&&!t.isDark(r,o+1)&&t.isDark(r,o+2)&&t.isDark(r,o+3)&&t.isDark(r,o+4)&&!t.isDark(r,o+5)&&t.isDark(r,o+6)&&(e+=40);for(var o=0;o<n;o++)for(var r=0;r<n-6;r++)t.isDark(r,o)&&!t.isDark(r+1,o)&&t.isDark(r+2,o)&&t.isDark(r+3,o)&&t.isDark(r+4,o)&&!t.isDark(r+5,o)&&t.isDark(r+6,o)&&(e+=40);var h=0;for(var o=0;o<n;o++)for(var r=0;r<n;r++)t.isDark(r,o)&&h++;return e+10*Math.abs(100*h/n/n-50)/5}};
 var QRMath={glog:function(n){return QRMath.LOG_TABLE[n]},gexp:function(n){while(n<0)n+=255;while(n>=256)n-=255;return QRMath.EXP_TABLE[n]},EXP_TABLE:new Array(256),LOG_TABLE:new Array(256)};for(var i=0;i<8;i++)QRMath.EXP_TABLE[i]=1<<i;for(var i=8;i<256;i++)QRMath.EXP_TABLE[i]=QRMath.EXP_TABLE[i-4]^QRMath.EXP_TABLE[i-5]^QRMath.EXP_TABLE[i-6]^QRMath.EXP_TABLE[i-8];for(var i=0;i<255;i++)QRMath.LOG_TABLE[QRMath.EXP_TABLE[i]]=i;
@@ -195,7 +195,6 @@ async function restorePcFromStoredOffer(){
     pc.ondatachannel=function(e){recvCh=e.channel;recvCh.onmessage=function(ev){try{var m=JSON.parse(ev.data);addMsg(m.user+': '+m.text,'peer');}catch(_){addMsg(ev.data,'peer');}};chat.disabled=false;live.textContent='Live';};
     var offerDesc=JSON.parse(stored);
     await pc.setLocalDescription(offerDesc);
-    // need to wait for gathering? stored offer already has candidates if gathered before, but we still wait a bit
     await new Promise(function(r){setTimeout(r,200);});
     return true;
   }catch(e){
@@ -224,19 +223,21 @@ async function createInvite(){
  return enc(pc.localDescription);
 }
 function buildJoinUrl(inv){
-  if(currentMode==='internet'){
-    return 'https://ericeisaman.github.io/pair/examples/join.html?invite='+encodeURIComponent(inv);
-  }else{
+  // Singular example path — repo only has example/
+  let baseUrl = 'https://ericeisaman.github.io/pair/example/join.html';
+  if(currentMode==='same-room'){
     try{
-      var base=new URL('join.html', location.href);
-      return base.toString()+'?invite='+encodeURIComponent(inv);
-    }catch(e){
-      return 'join.html?invite='+encodeURIComponent(inv);
-    }
+      var localBase=new URL('join.html', location.href);
+      baseUrl=localBase.toString();
+    }catch(e){ baseUrl='join.html'; }
   }
+  return baseUrl+'?invite='+encodeURIComponent(inv);
 }
 function buildJoinUrlEnc(e,k){
-  let baseUrl = currentMode==='internet' ? 'https://ericeisaman.github.io/pair/examples/join.html' : (function(){try{return new URL('join.html', location.href).toString();}catch(e){return 'join.html';}})();
+  let baseUrl = 'https://ericeisaman.github.io/pair/example/join.html';
+  if(currentMode==='same-room'){
+    try{ baseUrl=new URL('join.html', location.href).toString(); }catch(e){ baseUrl='join.html'; }
+  }
   return baseUrl+'?e='+encodeURIComponent(e)+'#k='+encodeURIComponent(k);
 }
 async function applyAccept(acceptRaw){
@@ -244,7 +245,6 @@ async function applyAccept(acceptRaw){
     var acceptStr=extractAccept(acceptRaw);
     var desc=dec(acceptStr);
     if(!pc){
-      // try restore from storage for same-room URL flow
       var restored=await restorePcFromStoredOffer();
       if(!restored){
         addMsg('No active offer. Create invite first, then paste accept.', 'system');
@@ -359,18 +359,12 @@ if(manualConfirm){
    if(raw) await applyAccept(raw);
  });
 }
-// --- NEW: Accept via URL for same-room host ---
-(async function handleAcceptUrlOnLoad(){
+(function handleAcceptUrlOnLoad(){
   try{
     var acceptParam=extractAcceptFromCurrentUrl();
     if(acceptParam){
-      // If pc not yet created, try restore, else wait for user to create invite then auto-apply
-      // Show UI hint
       addMsg('Found accept in URL, applying...', 'system');
-      // Give a moment for page to init, then try
-      setTimeout(async function(){
-        await applyAccept(acceptParam);
-      }, 500);
+      setTimeout(async function(){ await applyAccept(acceptParam); }, 500);
     }
   }catch(e){}
 })();
