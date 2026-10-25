@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Host — WebRTC via QR + AES Link</title><style>:root{--bg:#0a0a0b;--card:rgba(255,255,255,0.04);--card2:rgba(255,255,255,0.06);--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);--text:#fafafa;--muted:#a1a1aa;--muted2:#71717a;--white:#fff;--black:#0a0a0b;--input:#18181b}
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Host — WebRTC via QR + AES Creds • Symmetrical</title><style>:root{--bg:#0a0a0b;--card:rgba(255,255,255,0.04);--card2:rgba(255,255,255,0.06);--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);--text:#fafafa;--muted:#a1a1aa;--muted2:#71717a;--white:#fff;--black:#0a0a0b;--input:#18181b}
 *{box-sizing:border-box}html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,Inter,SF Pro Display,Segoe UI,Roboto,sans-serif}
 .shell{max-width:720px;margin:0 auto;padding:32px 20px 64px}
@@ -19,51 +19,110 @@ h1{font-size:34px;font-weight:650;letter-spacing:-0.03em;margin:0 0 10px}
 .toggle{display:flex;background:#18181b;border:1px solid rgba(255,255,255,0.08);border-radius:9999px;padding:4px;gap:4px}
 .toggle button{flex:1;appearance:none;border:0;background:transparent;color:#71717a;padding:8px 14px;border-radius:9999px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
 .toggle button.active{background:#fff;color:#000;font-weight:600}
-#inviteButton,#generateButton{appearance:none;border:0;cursor:pointer;background:#fff;color:#000;font-size:14px;font-weight:600;padding:12px 20px;border-radius:9999px;margin-top:12px}
+#inviteButton,#generateButton,#pasteOfferButton,#pasteAcceptButton{appearance:none;border:0;cursor:pointer;background:#fff;color:#000;font-size:14px;font-weight:600;padding:12px 20px;border-radius:9999px;margin-top:12px}
+#pasteOfferButton,#pasteAcceptButton{background:rgba(255,255,255,0.08);color:#fafafa;border:1px solid rgba(255,255,255,0.08)}
 .chat-row{display:flex;gap:10px;align-items:center;margin-bottom:16px}
 #chat{flex:1;background:#18181b;color:#fafafa;border:1px solid rgba(255,255,255,0.08);border-radius:9999px;padding:12px 16px}
-#inviteInput{width:100%;min-height:80px;background:#18181b;color:#fafafa;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px}
-#send{width:44px;height:44px;border-radius:9999px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.06);color:#fafafa}
+#inviteInput,#pasteOfferInput,#pasteAcceptInput,#pasteOfferE,#pasteOfferK,#pasteAcceptE,#pasteAcceptK{width:100%;background:#18181b;color:#fafafa;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px;font-family:ui-monospace;font-size:12px}
+#inviteInput{min-height:80px}
 #messages{display:flex;flex-direction:column;gap:10px}
 #messages p{margin:0;padding:10px 14px;border-radius:16px;max-width:78%}
 #messages p.me{align-self:flex-end;background:#fff;color:#000;border-bottom-right-radius:6px}
 #messages p.peer{align-self:flex-start;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.08);border-bottom-left-radius:6px}
 #messages p.system{align-self:center;border:1px dashed rgba(255,255,255,0.08);color:#71717a;font-size:12px;font-family:ui-monospace;padding:6px 12px;border-radius:999px}
-dialog#dialog{background:#151517;color:#fafafa;border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:24px;max-width:420px;width:calc(100% - 32px);margin:auto}
-dialog#dialog::backdrop{background:rgba(0,0,0,0.6);backdrop-filter:blur(12px)}
-.qr-wrap{background:#fff;padding:16px;border-radius:16px;display:flex;justify-content:center;min-height:312px}
-#qr,#qrEnc{width:100%;max-width:280px;aspect-ratio:1;display:block;border-radius:8px}
+dialog#dialog, dialog#acceptDialog{background:#151517;color:#fafafa;border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:24px;max-width:460px;width:calc(100% - 32px);margin:auto}
+dialog#dialog::backdrop, dialog#acceptDialog::backdrop{background:rgba(0,0,0,0.6);backdrop-filter:blur(12px)}
+.qr-wrap{background:#fff;padding:16px;border-radius:16px;display:flex;justify-content:center;min-height:200px;margin-bottom:12px}
+#qr,#qrEnc,#qrAccept,#qrAcceptEnc{width:100%;max-width:280px;aspect-ratio:1;display:block;border-radius:8px}
 .dialog-actions{display:flex;gap:10px;margin-top:12px}
-#scanButton,#closeButton{flex:1;padding:11px 16px;border-radius:9999px;border:1px solid rgba(255,255,255,0.08);cursor:pointer}
+#scanButton,#closeButton,#closeAcceptButton{flex:1;padding:11px 16px;border-radius:9999px;border:1px solid rgba(255,255,255,0.08);cursor:pointer}
 #scanButton{background:#fff;color:#000;font-weight:600}
-#closeButton{background:rgba(255,255,255,0.06);color:#fafafa}
+#closeButton,#closeAcceptButton{background:rgba(255,255,255,0.06);color:#fafafa}
 .dialog-hint{font-size:11px;color:#71717a;text-align:center;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px;margin-top:12px;font-family:ui-monospace;word-break:break-all}
 .link-row{display:flex;gap:8px;margin-top:12px}
-.link-row input{flex:1;background:#18181b;color:#fafafa;border:1px solid rgba(255,255,255,0.08);border-radius:9999px;padding:10px 14px;font-size:12px;font-family:ui-monospace}
-.link-row button{padding:10px 16px;border-radius:9999px;border:0;background:#fff;color:#000;font-weight:600;cursor:pointer}
+.link-row input{flex:1;background:#18181b;color:#fafafa;border:1px solid rgba(255,255,255,0.08);border-radius:9999px;padding:10px 14px;font-size:11px;font-family:ui-monospace}
+.link-row button{padding:10px 16px;border-radius:9999px;border:0;background:#fff;color:#000;font-weight:600;cursor:pointer;flex-shrink:0}
+.aes-creds{display:grid;gap:8px;margin-top:12px}
+.aes-creds .row{display:flex;gap:8px;align-items:center}
+.aes-creds label{font-size:10px;color:#a1a1aa;font-family:ui-monospace;text-transform:uppercase;min-width:18px}
 .footer{margin-top:28px;display:flex;justify-content:space-between;flex-wrap:wrap;font-size:11px;color:#71717a;font-family:ui-monospace}
-</style></head><body><div class="shell"><div class="eyebrow">WEBRTC / QR • P2P • HOST • EXAMPLE/</div><h1>Host</h1><p class="desc">Same-room = host only offline QR. Internet = STUN + share link + AES encrypted link. Host accepts joiner URL: host.html?accept=... for same-room.</p>
+</style></head><body><div class="shell"><div class="eyebrow">WEBRTC / QR • P2P • HOST • SYMMETRICAL AES CREDS • MOM APPROVED</div><h1>Host — Pair</h1><p class="desc">Mom's symmetrical flow: both go to same page you know (ericeisaman.github.io/pair/example/host.html). Exchange AES creds e.k in same room, paste into page. No link needed. Same-room offline, Internet STUN, AES encrypted.</p>
 <div class="card card-pad" style="margin-bottom:16px">
   <div class="card-header"><div class="card-label">Mode</div><div class="status"><span class="status-dot" id="statusDot" data-state="idle"></span><span id="statusText">Idle</span></div></div>
   <div class="toggle" style="margin-bottom:10px"><button id="modeSame" type="button">Same Room</button><button id="modeInternet" type="button" class="active">Internet (NAT)</button></div>
-  <div id="modeHint" style="font-size:11px;color:#71717a;font-family:ui-monospace;margin-bottom:14px">Internet: STUN • NAT traversal • share link + AES link</div>
-  <div class="invite-grid"><div><h3 style="margin:0 0 6px;font-size:15px">Start session</h3><p style="margin:0;color:#a1a1aa;font-size:13px">Choose mode then create invite</p></div><button id="inviteButton" type="button">Create invite</button></div>
+  <div id="modeHint" style="font-size:11px;color:#71717a;font-family:ui-monospace;margin-bottom:14px">Internet: STUN + AES creds exchange • symmetrical</div>
+  <h3 style="margin:12px 0 6px;font-size:15px">1. Create Offer (Invite)</h3>
+  <p style="margin:0;color:#a1a1aa;font-size:12px">You know the site. Create offer, share AES creds e.k with person in same room.</p>
+  <button id="inviteButton" type="button">Create invite</button>
+</div>
+<div class="card card-pad" style="margin-bottom:16px">
+  <div class="card-header"><div class="card-label">2. Paste Offer (Invite) — I am Joiner</div></div>
+  <p style="margin:0 0 10px;color:#a1a1aa;font-size:12px">Mom's symmetrical flow: both go to same page they know. Paste AES creds you got from other person.</p>
+  <textarea id="pasteOfferInput" placeholder="Paste invite: raw base64, full URL ?invite=..., AES ?e=...#k=..., or AES creds e.k" style="min-height:70px;margin-bottom:8px"></textarea>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+    <input id="pasteOfferE" placeholder="e (AES cred)"/>
+    <input id="pasteOfferK" placeholder="k (AES key)"/>
+  </div>
+  <button id="pasteOfferButton" type="button">Generate Accept from Offer</button>
+  <div style="font-size:10px;color:#71717a;font-family:ui-monospace;margin-top:6px">Accepts: plain invite, ?invite= URL, ?e=...#k=... URL, e.k creds, e + k fields, JSON {e,k}</div>
+</div>
+<div class="card card-pad" style="margin-bottom:16px">
+  <div class="card-header"><div class="card-label">3. Paste Accept (Answer) — I am Host</div></div>
+  <p style="margin:0 0 10px;color:#a1a1aa;font-size:12px">If you created offer, paste accept AES creds from other person here. Same page, no need to open ?accept= link.</p>
+  <textarea id="pasteAcceptInput" placeholder="Paste accept: raw base64, host.html?accept=..., or AES creds e.k" style="min-height:70px;margin-bottom:8px"></textarea>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+    <input id="pasteAcceptE" placeholder="e (accept AES)"/>
+    <input id="pasteAcceptK" placeholder="k (accept key)"/>
+  </div>
+  <button id="pasteAcceptButton" type="button">Connect with Accept</button>
 </div>
 <div class="card card-pad"><div class="card-header"><div class="card-label">Messages</div><div id="liveLabel" style="font-size:11px;color:#71717a;font-family:ui-monospace">Waiting</div></div><div class="chat-row"><input id="chat" placeholder="Not connected" disabled/><button id="send" type="button">Send</button></div><div id="messages"></div></div>
-<dialog id="dialog"><div id="dialogInner"><h2 id="h2">Invite</h2>
+<dialog id="dialog"><div id="dialogInner">
+<h2 id="h2">Invite — Offer</h2>
 <div id="qrWrapMain" class="qr-wrap"><canvas id="qr" width="512" height="512"></canvas></div>
 <div id="offerMeta" class="dialog-hint">P2P offer</div>
 <div class="link-row"><input id="shareLink" readonly placeholder="Shareable link (plain)"/><button id="copyLinkBtn" type="button">Copy</button></div>
 <div id="encSection" style="display:none;margin-top:18px;border-top:1px solid rgba(255,255,255,0.08);padding-top:16px">
   <div style="font-size:11px;font-family:ui-monospace;letter-spacing:0.08em;text-transform:uppercase;color:#a1a1aa;margin-bottom:8px">Remote folks • AES Encrypted Link</div>
   <div class="qr-wrap" style="margin-bottom:12px"><canvas id="qrEnc" width="512" height="512"></canvas></div>
-  <div class="dialog-hint" style="margin-bottom:8px">AES-GCM encrypted • key in #k= fragment • not sent to server • decrypts on join</div>
   <div class="link-row"><input id="shareLinkEnc" readonly placeholder="AES encrypted link"/><button id="copyLinkEncBtn" type="button">Copy Enc</button></div>
 </div>
+<div id="credsSection" style="display:none;margin-top:18px;border-top:1px solid rgba(255,255,255,0.08);padding-top:16px">
+  <div style="font-size:11px;font-family:ui-monospace;letter-spacing:0.08em;text-transform:uppercase;color:#22c55e;margin-bottom:8px">Mom's symmetrical — AES Creds Only (no URL needed, you know the site)</div>
+  <div class="qr-wrap" style="margin-bottom:12px"><canvas id="qrCreds" width="512" height="512"></canvas></div>
+  <div class="aes-creds">
+    <div class="row"><label>e</label><input id="offerE" readonly/><button id="copyOfferE" data-copy="offerE">Copy</button></div>
+    <div class="row"><label>k</label><input id="offerK" readonly/><button id="copyOfferK" data-copy="offerK">Copy</button></div>
+    <div class="row"><label>e.k</label><input id="offerCombined" readonly/><button id="copyOfferCombined" data-copy="offerCombined">Copy</button></div>
+  </div>
+  <div class="dialog-hint">Share this e.k string via QR, NFC, or show screen. Other person goes to same page they know and pastes into section 2.</div>
+</div>
 <div class="dialog-actions" style="margin-top:16px"><button id="scanButton">Scan accept</button><button id="closeButton">Close</button></div>
-<div id="manualArea" style="display:none;margin-top:12px"><textarea id="manualInput" placeholder="Paste accept (raw or URL like host.html?accept=...)" style="width:100%;min-height:80px;background:#18181b;color:#fafafa;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px"></textarea><button id="manualConfirm" style="margin-top:8px;width:100%;padding:10px;border-radius:9999px;background:rgba(255,255,255,0.08);color:#fafafa;border:1px solid rgba(255,255,255,0.08)">Confirm</button></div>
+<div id="manualArea" style="display:none;margin-top:12px"><textarea id="manualInput" placeholder="Paste accept (raw or URL or e.k)" style="width:100%;min-height:70px;background:#18181b;color:#fafafa;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px"></textarea><button id="manualConfirm" style="margin-top:8px;width:100%;padding:10px;border-radius:9999px;background:rgba(255,255,255,0.08);color:#fafafa;border:1px solid rgba(255,255,255,0.08)">Confirm Accept</button></div>
 </div></dialog>
-<div class="footer"><div>ICE toggle + AES-GCM + URL accept • rounded 20px • repo: example/</div><div>ericeisaman.github.io/pair/example/host.html</div></div></div><script>// QR Generator - Kazuhiko Arase MIT - inlined, no CDN
+<dialog id="acceptDialog"><div>
+<h2>Accept — Answer</h2>
+<div class="qr-wrap"><canvas id="qrAccept" width="512" height="512"></canvas></div>
+<div id="acceptMeta" class="dialog-hint">Accept • share back to host</div>
+<div class="link-row"><input id="shareLinkAccept" readonly/><button id="copyLinkAccept" data-copy="shareLinkAccept">Copy</button></div>
+<div id="acceptEncSection" style="display:none;margin-top:18px;border-top:1px solid rgba(255,255,255,0.08);padding-top:16px">
+  <div style="font-size:11px;font-family:ui-monospace;letter-spacing:0.08em;text-transform:uppercase;color:#a1a1aa;margin-bottom:8px">AES Encrypted Accept Link</div>
+  <div class="link-row"><input id="shareLinkAcceptEnc" readonly/><button id="copyLinkAcceptEnc" data-copy="shareLinkAcceptEnc">Copy Enc</button></div>
+</div>
+<div id="acceptCredsSection" style="display:none;margin-top:18px;border-top:1px solid rgba(255,255,255,0.08);padding-top:16px">
+  <div style="font-size:11px;font-family:ui-monospace;letter-spacing:0.08em;text-transform:uppercase;color:#22c55e;margin-bottom:8px">Symmetrical AES Creds — Accept</div>
+  <div class="qr-wrap"><canvas id="qrAcceptEnc" width="512" height="512"></canvas></div>
+  <div class="aes-creds">
+    <div class="row"><label>e</label><input id="acceptE" readonly/><button id="copyAcceptE" data-copy="acceptE">Copy</button></div>
+    <div class="row"><label>k</label><input id="acceptK" readonly/><button id="copyAcceptK" data-copy="acceptK">Copy</button></div>
+    <div class="row"><label>e.k</label><input id="acceptCombined" readonly/><button id="copyAcceptCombined" data-copy="acceptCombined">Copy</button></div>
+  </div>
+  <div class="dialog-hint">Other person pastes this e.k into section 3 on same page they know. No URL needed.</div>
+</div>
+<button id="closeAcceptButton" style="margin-top:16px;width:100%;padding:11px;border-radius:9999px;background:rgba(255,255,255,0.06);color:#fafafa;border:1px solid rgba(255,255,255,0.08)">Close</button>
+</div></dialog>
+<div class="footer"><div>ICE toggle + AES-GCM e.k creds + symmetrical same page • repo: example/</div><div>ericeisaman.github.io/pair/example/host.html</div></div></div><script>
+// QR Generator - Kazuhiko Arase MIT - inlined, no CDN
 (function(){
 var QRUtil={PATTERN_POSITION_TABLE:[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,84,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],G15:1335,G18:7973,G15_MASK:21522,getBCHTypeInfo:function(d){var e=d<<10;while(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G15)>=0)e^=(QRUtil.G15<<(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G15)));return((d<<10)|e)^QRUtil.G15_MASK},getBCHTypeNumber:function(d){var e=d<<12;while(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G18)>=0)e^=(QRUtil.G18<<(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G18)));return(d<<12)|e},getBCHDigit:function(d){var e=0;while(d!=0){e++;d>>>=1}return e},getPatternPosition:function(t,n){return QRUtil.PATTERN_POSITION_TABLE[t-1][n]},getMask:function(t,i,j){switch(t){case 0:return(i+j)%2==0;case 1:return i%2==0;case 2:return j%3==0;case 3:return(i+j)%3==0;case 4:return(Math.floor(i/2)+Math.floor(j/3))%2==0;case 5:return(i*j)%2+(i*j)%3==0;case 6:return((i*j)%2+(i*j)%3)%2==0;case 7:return((i*j)%3+(i+j)%2)%2==0;default:throw new Error("bad")}},getErrorCorrectPolynomial:function(e){var a=new QRPolynomial([1],0);for(var i=0;i<e;i++)a=a.multiply(new QRPolynomial([1,QRMath.gexp(i)],0));return a},getLengthInBits:function(t,e){return e<10?8:16},getLostPoint:function(t){var n=t.getModuleCount(),e=0;for(var r=0;r<n;r++)for(var o=0;o<n;o++){var l=0,s=t.isDark(r,o);for(var u=-1;u<=1;u++)if(!(r+u<0||n<=r+u))for(var a=-1;a<=1;a++)if(!(o+a<0||n<=o+a)&&(u!=0||a!=0)&&s==t.isDark(r+u,o+a))l++;l>5&&(e+=3+l-5)}for(var r=0;r<n-1;r++)for(var o=0;o<n-1;o++){var c=0;t.isDark(r,o)&&c++;t.isDark(r+1,o)&&c++;t.isDark(r,o+1)&&c++;t.isDark(r+1,o+1)&&c++;(c==0||c==4)&&(e+=3)}for(var r=0;r<n;r++)for(var o=0;o<n-6;o++)t.isDark(r,o)&&!t.isDark(r,o+1)&&t.isDark(r,o+2)&&t.isDark(r,o+3)&&t.isDark(r,o+4)&&!t.isDark(r,o+5)&&t.isDark(r,o+6)&&(e+=40);for(var o=0;o<n;o++)for(var r=0;r<n-6;r++)t.isDark(r,o)&&!t.isDark(r+1,o)&&t.isDark(r+2,o)&&t.isDark(r+3,o)&&t.isDark(r+4,o)&&!t.isDark(r+5,o)&&t.isDark(r+6,o)&&(e+=40);var h=0;for(var o=0;o<n;o++)for(var r=0;r<n;r++)t.isDark(r,o)&&h++;return e+10*Math.abs(100*h/n/n-50)/5}};
 var QRMath={glog:function(n){return QRMath.LOG_TABLE[n]},gexp:function(n){while(n<0)n+=255;while(n>=256)n-=255;return QRMath.EXP_TABLE[n]},EXP_TABLE:new Array(256),LOG_TABLE:new Array(256)};for(var i=0;i<8;i++)QRMath.EXP_TABLE[i]=1<<i;for(var i=8;i<256;i++)QRMath.EXP_TABLE[i]=QRMath.EXP_TABLE[i-4]^QRMath.EXP_TABLE[i-5]^QRMath.EXP_TABLE[i-6]^QRMath.EXP_TABLE[i-8];for(var i=0;i<255;i++)QRMath.LOG_TABLE[QRMath.EXP_TABLE[i]]=i;
@@ -82,15 +141,7 @@ QRCodeModel.createData=function(t,e,list){var rs=QRRSBlock.getRSBlocks(t);var bu
 QRCodeModel.createBytes=function(buf,rs){var off=0,maxDc=0,maxEc=0,dc=new Array(rs.length),ec=new Array(rs.length);for(var r=0;r<rs.length;r++){var dcCount=rs[r].dataCount,ecCount=rs[r].totalCount-dcCount;maxDc=Math.max(maxDc,dcCount);maxEc=Math.max(maxEc,ecCount);dc[r]=new Array(dcCount);for(var i=0;i<dc[r].length;i++)dc[r][i]=0xff&buf.buffer[i+off];off+=dcCount;var rsPoly=QRUtil.getErrorCorrectPolynomial(ecCount);var raw=new QRPolynomial(dc[r],rsPoly.getLength()-1);var mod=raw.mod(rsPoly);ec[r]=new Array(rsPoly.getLength()-1);for(var i=0;i<ec[r].length;i++){var mi=i+mod.getLength()-ec[r].length;ec[r][i]=mi>=0?mod.get(mi):0}}var total=0;for(var i=0;i<rs.length;i++)total+=rs[i].totalCount;var data=new Array(total),idx=0;for(var i=0;i<maxDc;i++)for(var r=0;r<rs.length;r++)if(i<dc[r].length)data[idx++]=dc[r][i];for(var i=0;i<maxEc;i++)for(var r=0;r<rs.length;r++)if(i<ec[r].length)data[idx++]=ec[r][i];return data};
 window._qrgen=function(txt){var m=new QRCodeModel(0,0);m.addData(txt);m.make();return m};
 })();
-function drawQRToCanvas(c,txt){
-  var m=window._qrgen(txt);
-  var cnt=m.getModuleCount();
-  var ctx=c.getContext('2d');
-  var s=c.width,mar=6,cell=(s-mar*2)/cnt;
-  ctx.fillStyle='#fff';ctx.fillRect(0,0,s,s);
-  ctx.fillStyle='#000';
-  for(var r=0;r<cnt;r++)for(var cc=0;cc<cnt;cc++)if(m.isDark(r,cc))ctx.fillRect(mar+cc*cell,mar+r*cell,Math.ceil(cell),Math.ceil(cell));
-}
+function drawQRToCanvas(c,txt){var m=window._qrgen(txt);var cnt=m.getModuleCount();var ctx=c.getContext('2d');var s=c.width,mar=6,cell=(s-mar*2)/cnt;ctx.fillStyle='#fff';ctx.fillRect(0,0,s,s);ctx.fillStyle='#000';for(var r=0;r<cnt;r++)for(var cc=0;cc<cnt;cc++)if(m.isDark(r,cc))ctx.fillRect(mar+cc*cell,mar+r*cell,Math.ceil(cell),Math.ceil(cell));}
 let currentMode='internet';
 function getConfig(){
   if(currentMode==='same-room') return {iceServers:[]};
@@ -104,8 +155,11 @@ const inviteBtn=document.getElementById('inviteButton');
 const dialog=document.getElementById('dialog');
 const qr=document.getElementById('qr');
 const qrEnc=document.getElementById('qrEnc');
+const qrAccept=document.getElementById('qrAccept');
+const qrAcceptEnc=document.getElementById('qrAcceptEnc');
 const scanBtn=document.getElementById('scanButton');
 const closeBtn=document.getElementById('closeButton');
+const closeAcceptBtn=document.getElementById('closeAcceptButton');
 const chat=document.getElementById('chat');
 const sendBtn=document.getElementById('send');
 const msgs=document.getElementById('messages');
@@ -117,6 +171,14 @@ const linkInput=document.getElementById('shareLink');
 const linkEncInput=document.getElementById('shareLinkEnc');
 const copyBtn=document.getElementById('copyLinkBtn');
 const copyEncBtn=document.getElementById('copyLinkEncBtn');
+const pasteOfferInput=document.getElementById('pasteOfferInput');
+const pasteOfferE=document.getElementById('pasteOfferE');
+const pasteOfferK=document.getElementById('pasteOfferK');
+const pasteOfferBtn=document.getElementById('pasteOfferButton');
+const pasteAcceptInput=document.getElementById('pasteAcceptInput');
+const pasteAcceptE=document.getElementById('pasteAcceptE');
+const pasteAcceptK=document.getElementById('pasteAcceptK');
+const pasteAcceptBtn=document.getElementById('pasteAcceptButton');
 const modeSame=document.getElementById('modeSame');
 const modeInternet=document.getElementById('modeInternet');
 function setMode(m){
@@ -124,7 +186,7 @@ function setMode(m){
   CONFIG=getConfig();
   modeSame.classList.toggle('active', m==='same-room');
   modeInternet.classList.toggle('active', m==='internet');
-  document.getElementById('modeHint').textContent = m==='same-room' ? 'Same-room: host candidates only • offline • fastest • QR' : 'Internet: STUN + AES encrypted link • share link across internet • QR also works';
+  document.getElementById('modeHint').textContent = m==='same-room' ? 'Same-room: host only • offline • fastest' : 'Internet: STUN • AES creds exchange • symmetrical';
 }
 modeSame.addEventListener('click', function(){setMode('same-room');});
 modeInternet.addEventListener('click', function(){setMode('internet');});
@@ -134,58 +196,107 @@ function addMsg(t,c){var p=document.createElement('p');p.className=c||'peer';p.t
 function enc(o){return btoa(JSON.stringify(o));}
 function dec(s){return JSON.parse(atob(s));}
 function bytesToB64Url(bytes){
-  let binary='';
-  for(let i=0;i<bytes.length;i++) binary+=String.fromCharCode(bytes[i]);
+  let binary=''; for(let i=0;i<bytes.length;i++) binary+=String.fromCharCode(bytes[i]);
   return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 }
 function b64UrlToBytes(b64url){
   b64url=b64url.replace(/-/g,'+').replace(/_/g,'/');
   while(b64url.length%4) b64url+='=';
-  let binary=atob(b64url);
-  let bytes=new Uint8Array(binary.length);
-  for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
-  return bytes;
+  let binary=atob(b64url); let bytes=new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i); return bytes;
 }
-async function encryptOfferJson(jsonStr){
+async function encryptJson(jsonStr){
   const key=await crypto.subtle.generateKey({name:"AES-GCM", length:256}, true, ["encrypt","decrypt"]);
   const iv=crypto.getRandomValues(new Uint8Array(12));
   const data=new TextEncoder().encode(jsonStr);
   const ct=await crypto.subtle.encrypt({name:"AES-GCM", iv}, key, data);
   const rawKey=await crypto.subtle.exportKey("raw", key);
   const combined=new Uint8Array(iv.length + ct.byteLength);
-  combined.set(iv,0);
-  combined.set(new Uint8Array(ct), iv.length);
-  return {
-    e: bytesToB64Url(combined),
-    k: bytesToB64Url(new Uint8Array(rawKey))
-  };
+  combined.set(iv,0); combined.set(new Uint8Array(ct), iv.length);
+  return { e: bytesToB64Url(combined), k: bytesToB64Url(new Uint8Array(rawKey)) };
+}
+async function decryptJson(eB64Url, kB64Url){
+  const combined=b64UrlToBytes(eB64Url);
+  const iv=combined.slice(0,12); const ct=combined.slice(12);
+  const rawKey=b64UrlToBytes(kB64Url);
+  const key=await crypto.subtle.importKey("raw", rawKey, {name:"AES-GCM"}, false, ["decrypt"]);
+  const plain=await crypto.subtle.decrypt({name:"AES-GCM", iv}, key, ct);
+  return new TextDecoder().decode(plain);
+}
+function parseAesCreds(input){
+  if(!input) return null;
+  input=input.trim();
+  // Try JSON {e,k}
+  try{ var j=JSON.parse(input); if(j.e && j.k) return {e:j.e, k:j.k}; }catch(e){}
+  // Try URL ?e=...#k=... or ?e=...&k=...
+  try{
+    // full URL or query string
+    if(input.includes('e=')){
+      var eM=input.match(/[?&]e=([^&#]+)/); var kM=input.match(/[&#?]k=([^&]+)/);
+      if(eM){ var e=decodeURIComponent(eM[1]); var k=kM?decodeURIComponent(kM[1]):null; if(e && k) return {e:e,k:k}; }
+    }
+  }catch(e){}
+  // Try hash fragment #k=
+  if(input.includes('#')){
+    var parts=input.split('#');
+    // format e#k or e#k=...
+    if(parts.length>=2){
+      var left=parts[0]; var right=parts[1];
+      // right may be k=... or just k
+      var kVal=right; var km=right.match(/k=([^&]+)/); if(km) kVal=decodeURIComponent(km[1]); else kVal=right.replace(/^k=/,'');
+      // left may contain e=...
+      var eVal=left; var em=left.match(/e=([^&]+)/); if(em) eVal=decodeURIComponent(em[1]);
+      // if left is just e (no e=) and right is k
+      if(eVal && kVal && eVal.length>20 && kVal.length>20) return {e:eVal, k:kVal};
+    }
+  }
+  // Try e.k dot separator (Mom's short creds)
+  if(input.includes('.')){
+    var dotParts=input.split('.');
+    // last part is k, first part(s) is e (e may contain dots? no base64url no dot)
+    if(dotParts.length>=2){
+      var kCandidate=dotParts[dotParts.length-1];
+      var eCandidate=dotParts.slice(0,-1).join('.');
+      // strip possible prefixes
+      eCandidate=eCandidate.replace(/.*e=/,'').replace(/.*:/,'').trim();
+      kCandidate=kCandidate.replace(/k=/,'').trim();
+      if(eCandidate.length>20 && kCandidate.length>10) return {e:eCandidate, k:kCandidate};
+    }
+  }
+  // Try space or newline separated "e k"
+  var ws=input.split(/\s+/); 
+  if(ws.length>=2 && ws[0].length>20 && ws[1].length>10){
+    // Heuristic: both look like base64url
+    return {e:ws[0].replace(/e=/,''), k:ws[1].replace(/k=/,'')};
+  }
+  return null;
+}
+function extractInvite(input){
+  input=input.trim();
+  // If it's AES creds, return null here, handle separately
+  if(parseAesCreds(input)) return null;
+  try{var u=new URL(input);var v=u.searchParams.get('invite');if(v)return v;}catch(e){}
+  if(input.includes('invite=')){var m=input.match(/invite=([^&]+)/);if(m)return decodeURIComponent(m[1]);}
+  // If input looks like raw base64 and not AES, return as is
+  if(input.length>50) return input;
+  return input;
 }
 function extractAccept(input){
   input=input.trim();
-  try{
-    var u=new URL(input);
-    var v=u.searchParams.get('accept');
-    if(v) return v;
-  }catch(e){}
-  if(input.includes('accept=')){
-    var m=input.match(/accept=([^&]+)/);
-    if(m) return decodeURIComponent(m[1]);
-  }
+  if(parseAesCreds(input)) return null;
+  try{var u=new URL(input);var v=u.searchParams.get('accept');if(v)return v;}catch(e){}
+  if(input.includes('accept=')){var m=input.match(/accept=([^&]+)/);if(m)return decodeURIComponent(m[1]);}
   return input;
 }
 function extractAcceptFromCurrentUrl(){
-  try{
-    var url=new URL(location.href);
-    var a=url.searchParams.get('accept');
-    if(a) return a;
-  }catch(e){}
-  return null;
+  try{var url=new URL(location.href);var a=url.searchParams.get('accept');if(a)return a;}catch(e){} return null;
 }
-let pc=null,sendCh=null,recvCh=null,stream=null,video=null,det=null,raf=null,scanning=false,lastOfferJson=null;
-if('BarcodeDetector' in window){try{det=new BarcodeDetector({formats:['qr_code']});}catch(e){}}
+function extractInviteFromCurrentUrl(){
+  try{var url=new URL(location.href);var i=url.searchParams.get('invite');if(i)return i; var e=url.searchParams.get('e'); if(e){ var k=null; if(location.hash.includes('k=')){var hm=location.hash.match(/k=([^&]+)/); if(hm) k=decodeURIComponent(hm[1]);} if(!k) k=url.searchParams.get('k'); if(e&&k) return {aes:{e:e,k:k}}; } }catch(e){} return null;
+}
 function saveOffer(offerJson){
   try{
-    var obj = {offer: offerJson, mode: currentMode, ts: Date.now()};
+    var obj={offer:offerJson, mode:currentMode, ts:Date.now()};
     localStorage.setItem('webrtc-qr-last-offer', offerJson);
     localStorage.setItem('webrtc-qr-last-offer-meta', JSON.stringify(obj));
     sessionStorage.setItem('webrtc-qr-last-offer', offerJson);
@@ -194,21 +305,12 @@ function saveOffer(offerJson){
 async function restorePcFromStoredOffer(){
   try{
     var metaStr=null, stored=null;
-    try{ metaStr=localStorage.getItem('webrtc-qr-last-offer-meta'); }catch(e){}
-    try{ stored=localStorage.getItem('webrtc-qr-last-offer'); }catch(e){}
-    if(!stored){
-      try{ stored=sessionStorage.getItem('webrtc-qr-last-offer'); }catch(e){}
-    }
+    try{metaStr=localStorage.getItem('webrtc-qr-last-offer-meta');}catch(e){}
+    try{stored=localStorage.getItem('webrtc-qr-last-offer');}catch(e){}
+    if(!stored){try{stored=sessionStorage.getItem('webrtc-qr-last-offer');}catch(e){}}
     if(!stored) return false;
-    // Restore mode if we have it
     if(metaStr){
-      try{
-        var metaObj=JSON.parse(metaStr);
-        if(metaObj.mode && metaObj.mode!==currentMode){
-          setMode(metaObj.mode);
-        }
-        if(metaObj.offer) stored=metaObj.offer;
-      }catch(e){}
+      try{var metaObj=JSON.parse(metaStr); if(metaObj.mode && metaObj.mode!==currentMode){setMode(metaObj.mode);} if(metaObj.offer) stored=metaObj.offer;}catch(e){}
     }
     lastOfferJson=stored;
     pc=new RTCPeerConnection(CONFIG);
@@ -220,11 +322,10 @@ async function restorePcFromStoredOffer(){
     await pc.setLocalDescription(offerDesc);
     await new Promise(function(r){setTimeout(r,300);});
     return true;
-  }catch(e){
-    console.warn('restore failed', e);
-    return false;
-  }
+  }catch(e){console.warn('restore failed',e);return false;}
 }
+let pc=null,sendCh=null,recvCh=null,stream=null,video=null,det=null,raf=null,scanning=false,lastOfferJson=null,lastAcceptJson=null,lastOfferAes=null,lastAcceptAes=null;
+if('BarcodeDetector' in window){try{det=new BarcodeDetector({formats:['qr_code']});}catch(e){}}
 async function createInvite(){
  if(pc){try{pc.close();}catch(e){}}
  pc=new RTCPeerConnection(CONFIG);
@@ -236,8 +337,7 @@ async function createInvite(){
  await pc.setLocalDescription(offer);
  await new Promise(function(r){
    if(pc.iceGatheringState==='complete')return r();
-   var done=false;
-   var to=setTimeout(function(){if(!done){done=true;r();}},1500);
+   var done=false; var to=setTimeout(function(){if(!done){done=true;r();}},1500);
    pc.addEventListener('icecandidate',function(ev){if(!ev.candidate&&!done){done=true;clearTimeout(to);r();}});
    pc.addEventListener('icegatheringstatechange',function(){if(pc.iceGatheringState==='complete'&&!done){done=true;clearTimeout(to);r();}});
  });
@@ -246,112 +346,160 @@ async function createInvite(){
  return enc(pc.localDescription);
 }
 function buildJoinUrl(inv){
-  // Singular example path — repo only has example/
-  let baseUrl = 'https://ericeisaman.github.io/pair/example/join.html';
-  if(currentMode==='same-room'){
-    try{
-      var localBase=new URL('join.html', location.href);
-      baseUrl=localBase.toString();
-    }catch(e){ baseUrl='join.html'; }
-  }
+  let baseUrl='https://ericeisaman.github.io/pair/example/join.html';
+  if(currentMode==='same-room'){ try{baseUrl=new URL('join.html', location.href).toString();}catch(e){baseUrl='join.html';} }
   return baseUrl+'?invite='+encodeURIComponent(inv);
 }
 function buildJoinUrlEnc(e,k){
-  let baseUrl = 'https://ericeisaman.github.io/pair/example/join.html';
-  if(currentMode==='same-room'){
-    try{ baseUrl=new URL('join.html', location.href).toString(); }catch(e){ baseUrl='join.html'; }
-  }
+  let baseUrl='https://ericeisaman.github.io/pair/example/join.html';
+  if(currentMode==='same-room'){ try{baseUrl=new URL('join.html', location.href).toString();}catch(e){baseUrl='join.html';} }
   return baseUrl+'?e='+encodeURIComponent(e)+'#k='+encodeURIComponent(k);
+}
+function buildHostUrl(acceptCode){
+  try{var base=new URL('host.html', location.href); return base.toString()+'?accept='+encodeURIComponent(acceptCode);}catch(e){return 'host.html?accept='+encodeURIComponent(acceptCode);}
+}
+function buildHostUrlEnc(e,k){
+  try{var base=new URL('host.html', location.href); return base.toString()+'?e='+encodeURIComponent(e)+'#k='+encodeURIComponent(k);}catch(e){return 'host.html?e='+encodeURIComponent(e)+'#k='+encodeURIComponent(k);}
+}
+async function showInvite(inv, aesPair){
+  drawQRToCanvas(qr, buildJoinUrl(inv));
+  if(linkInput) linkInput.value=buildJoinUrl(inv);
+  meta.textContent = currentMode==='same-room' ? 'Same-room • host only • '+new Date().toLocaleTimeString() : 'Internet • STUN • '+new Date().toLocaleTimeString();
+  if(aesPair){
+    lastOfferAes=aesPair;
+    if(linkEncInput) linkEncInput.value=buildJoinUrlEnc(aesPair.e, aesPair.k);
+    if(qrEnc) drawQRToCanvas(qrEnc, buildJoinUrlEnc(aesPair.e, aesPair.k));
+    document.getElementById('encSection').style.display='block';
+    // AES creds only - Mom's symmetrical exchange
+    var eInput=document.getElementById('offerE'); var kInput=document.getElementById('offerK'); var combinedInput=document.getElementById('offerCombined');
+    var qrCreds=document.getElementById('qrCreds');
+    if(eInput) eInput.value=aesPair.e;
+    if(kInput) kInput.value=aesPair.k;
+    if(combinedInput) combinedInput.value=aesPair.e+'.'+aesPair.k;
+    if(qrCreds) drawQRToCanvas(qrCreds, aesPair.e+'.'+aesPair.k);
+    document.getElementById('credsSection').style.display='block';
+  }
+  dialog.showModal();
 }
 async function applyAccept(acceptRaw, fromUrl){
   try{
-    var acceptStr=extractAccept(acceptRaw);
-    var desc=dec(acceptStr);
+    // First check if it's AES creds
+    var aesParsed=parseAesCreds(acceptRaw);
+    var desc=null;
+    if(aesParsed){
+      try{
+        var jsonStr=await decryptJson(aesParsed.e, aesParsed.k);
+        desc=JSON.parse(jsonStr);
+      }catch(e){ addMsg('Failed AES decrypt accept: '+e,'system'); return; }
+    }else{
+      var acceptStr=extractAccept(acceptRaw);
+      if(!acceptStr){ addMsg('Could not parse accept','system'); return; }
+      desc=dec(acceptStr);
+    }
     if(!pc){
       var restored=await restorePcFromStoredOffer();
       if(!restored){
-        // Save pending accept so after user creates invite we auto-apply
-        try{
-          localStorage.setItem('webrtc-qr-pending-accept', acceptRaw);
-          sessionStorage.setItem('webrtc-qr-pending-accept', acceptRaw);
-        }catch(e){}
+        try{ localStorage.setItem('webrtc-qr-pending-accept', acceptRaw); sessionStorage.setItem('webrtc-qr-pending-accept', acceptRaw); }catch(e){}
         addMsg('No active offer in this browser. Create invite first — I will auto-apply the accept.', 'system');
-        if(manualInput){
-          manualInput.value=acceptRaw;
-          if(manualArea) manualArea.style.display='block';
-          // Show dialog with manual area visible
-          if(dialog && !dialog.open) try{dialog.showModal();}catch(e){}
-        }
-        // If this was from URL, keep URL visible
-        if(fromUrl){
-          setStatus('waiting','Create invite to apply accept');
-        }
+        if(manualInput){ manualInput.value=acceptRaw; if(manualArea) manualArea.style.display='block'; if(dialog && !dialog.open) try{dialog.showModal();}catch(e){} }
+        if(fromUrl) setStatus('waiting','Create invite to apply accept');
         return;
       }
     }
     await pc.setRemoteDescription(desc);
-    // Clear pending
     try{ localStorage.removeItem('webrtc-qr-pending-accept'); sessionStorage.removeItem('webrtc-qr-pending-accept'); }catch(e){}
-    scanning=false;
-    try{dialog.close();}catch(e){}
-    if(video){try{video.pause();video.srcObject=null;}catch(e){}}
-    if(stream){try{stream.getTracks().forEach(function(t){t.stop();});}catch(e){}}
-    var scanWrap=document.getElementById('scanWrap');
-    if(scanWrap) scanWrap.innerHTML='';
-    setStatus('connected','Connected');
-    addMsg('Accepted via URL/QR @ '+Date.now(), 'system');
-  }catch(e){
-    addMsg('Failed accept: '+e, 'system');
+    scanning=false; try{dialog.close();}catch(e){} try{document.getElementById('acceptDialog').close();}catch(e){}
+    if(video){try{video.pause();video.srcObject=null;}catch(e){}} if(stream){try{stream.getTracks().forEach(function(t){t.stop();});}catch(e){}}
+    var scanWrap=document.getElementById('scanWrap'); if(scanWrap) scanWrap.innerHTML='';
+    setStatus('connected','Connected'); addMsg('Accepted via URL/QR/AES creds @ '+Date.now(), 'system');
+  }catch(e){ addMsg('Failed accept: '+e,'system'); }
+}
+async function createAnswerFromAny(rawInvite, eVal, kVal){
+  // eVal,kVal may be provided separately from Mom's creds exchange
+  var aesPair=null;
+  if(eVal && kVal){ aesPair={e:eVal.trim(), k:kVal.trim()}; }
+  else if(rawInvite){
+    var parsed=parseAesCreds(rawInvite);
+    if(parsed) aesPair=parsed;
   }
+  var remoteDesc=null;
+  if(aesPair){
+    try{ var jsonStr=await decryptJson(aesPair.e, aesPair.k); remoteDesc=JSON.parse(jsonStr); }
+    catch(e){ addMsg('Failed decrypt offer AES creds: '+e,'system'); return; }
+  }else{
+    var inviteCode=extractInvite(rawInvite);
+    if(!inviteCode){ addMsg('Could not parse invite','system'); return; }
+    try{ remoteDesc=dec(inviteCode); }catch(e){ addMsg('Failed parse invite: '+e,'system'); return; }
+  }
+  if(pc){try{pc.close();}catch(e){}}
+  pc=new RTCPeerConnection(CONFIG);
+  sendCh=pc.createDataChannel('fromhost');
+  sendCh.onopen=function(){setStatus('connected','Connected');live.textContent='Live';addMsg('Connected successfully @ '+Date.now(),'system');chat.disabled=false;};
+  pc.onconnectionstatechange=function(){st.textContent=pc.connectionState;};
+  pc.ondatachannel=function(e){recvCh=e.channel;recvCh.onmessage=function(ev){try{var m=JSON.parse(ev.data);addMsg(m.user+': '+m.text,'peer');}catch(_){addMsg(ev.data,'peer');}};chat.disabled=false;live.textContent='Live';};
+  await pc.setRemoteDescription(remoteDesc);
+  var answer=await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+  await new Promise(function(r){
+    if(pc.iceGatheringState==='complete')return r();
+    var done=false; var to=setTimeout(function(){if(!done){done=true;r();}},1500);
+    pc.addEventListener('icecandidate',function(ev){if(!ev.candidate&&!done){done=true;clearTimeout(to);r();}});
+    pc.addEventListener('icegatheringstatechange',function(){if(pc.iceGatheringState==='complete'&&!done){done=true;clearTimeout(to);r();}});
+  });
+  lastAcceptJson=JSON.stringify(pc.localDescription);
+  var acceptCode=enc(pc.localDescription);
+  // Encrypt accept for symmetrical AES exchange (Mom)
+  var acceptAes=null;
+  try{ acceptAes=await encryptJson(lastAcceptJson); lastAcceptAes=acceptAes; }catch(e){}
+  showAccept(acceptCode, acceptAes);
+}
+async function showAccept(acceptCode, aesPair){
+  if(qrAccept) drawQRToCanvas(qrAccept, buildHostUrl(acceptCode));
+  var linkAccept=document.getElementById('shareLinkAccept'); if(linkAccept) linkAccept.value=buildHostUrl(acceptCode);
+  if(aesPair){
+    var eInput=document.getElementById('acceptE'); var kInput=document.getElementById('acceptK'); var combined=document.getElementById('acceptCombined');
+    var linkEnc=document.getElementById('shareLinkAcceptEnc'); var qrEncA=document.getElementById('qrAcceptEnc');
+    if(eInput) eInput.value=aesPair.e; if(kInput) kInput.value=aesPair.k;
+    if(combined) combined.value=aesPair.e+'.'+aesPair.k;
+    if(linkEnc) linkEnc.value=buildHostUrlEnc(aesPair.e, aesPair.k);
+    if(qrEncA) drawQRToCanvas(qrEncA, aesPair.e+'.'+aesPair.k);
+    document.getElementById('acceptEncSection').style.display='block';
+    document.getElementById('acceptCredsSection').style.display='block';
+  }
+  var dlg=document.getElementById('acceptDialog'); if(dlg) dlg.showModal();
+  setStatus('waiting','Accept ready — share AES creds');
 }
 inviteBtn.addEventListener('click', async function(){
  try{
    setStatus('creating','Creating...');
    inviteBtn.disabled=true;
    var inv=await createInvite();
-   var joinUrl=buildJoinUrl(inv);
-   drawQRToCanvas(qr, joinUrl);
-   if(linkInput) linkInput.value=joinUrl;
-   meta.textContent = currentMode==='same-room' ? 'Same-room • host only • '+new Date().toLocaleTimeString() : 'Internet • STUN • '+new Date().toLocaleTimeString();
-   try{
-     var encPair=await encryptOfferJson(lastOfferJson);
-     var encUrl=buildJoinUrlEnc(encPair.e, encPair.k);
-     if(linkEncInput) linkEncInput.value=encUrl;
-     if(qrEnc) drawQRToCanvas(qrEnc, encUrl);
-     document.getElementById('encSection').style.display='block';
-   }catch(e){
-     console.error('AES encrypt failed', e);
-   }
-   dialog.showModal();
-   setStatus('waiting','Waiting for scan');
+   var aesPair=null;
+   try{ aesPair=await encryptJson(lastOfferJson); }catch(e){ console.error('AES encrypt failed',e); }
+   await showInvite(inv, aesPair);
+   setStatus('waiting','Waiting for accept — paste AES creds or scan');
    if(manualArea)manualArea.style.display='none';
-   // Auto-apply pending accept if user pasted accept URL before creating offer
    try{
      var pending=null;
-     try{ pending=localStorage.getItem('webrtc-qr-pending-accept'); }catch(e){}
-     if(!pending){ try{ pending=sessionStorage.getItem('webrtc-qr-pending-accept'); }catch(e){} }
-     if(pending){
-       addMsg('Found pending accept from URL, applying...', 'system');
-       setTimeout(function(){ applyAccept(pending, false); }, 800);
-     }
+     try{pending=localStorage.getItem('webrtc-qr-pending-accept');}catch(e){}
+     if(!pending){try{pending=sessionStorage.getItem('webrtc-qr-pending-accept');}catch(e){}}
+     if(pending){ addMsg('Found pending accept from URL, applying...','system'); setTimeout(function(){applyAccept(pending,false);},800); }
    }catch(e){}
- }catch(e){
-   setStatus('failed','Failed');
-   addMsg('Failed: '+e,'system');
-   inviteBtn.disabled=false;
- }
+ }catch(e){ setStatus('failed','Failed'); addMsg('Failed: '+e,'system'); inviteBtn.disabled=false; }
 });
 closeBtn.addEventListener('click', function(){dialog.close();setStatus('idle','Idle');inviteBtn.disabled=false;});
-if(copyBtn && linkInput){
- copyBtn.addEventListener('click', function(){
-   navigator.clipboard.writeText(linkInput.value).then(function(){copyBtn.textContent='Copied!';setTimeout(function(){copyBtn.textContent='Copy';},1200);});
- });
+if(closeAcceptBtn) closeAcceptBtn.addEventListener('click', function(){document.getElementById('acceptDialog').close();});
+if(copyBtn && linkInput){ copyBtn.addEventListener('click', function(){ navigator.clipboard.writeText(linkInput.value).then(function(){copyBtn.textContent='Copied!';setTimeout(function(){copyBtn.textContent='Copy';},1200);}); }); }
+if(copyEncBtn && linkEncInput){ copyEncBtn.addEventListener('click', function(){ navigator.clipboard.writeText(linkEncInput.value).then(function(){copyEncBtn.textContent='Copied!';setTimeout(function(){copyEncBtn.textContent='Copy Enc';},1200);}); }); }
+function setupCopy(id){
+  var btn=document.getElementById(id); if(!btn) return;
+  var inputId=btn.getAttribute('data-copy'); if(!inputId) return;
+  btn.addEventListener('click', function(){
+    var inp=document.getElementById(inputId);
+    if(inp) navigator.clipboard.writeText(inp.value).then(function(){var orig=btn.textContent; btn.textContent='Copied!'; setTimeout(function(){btn.textContent=orig;},1200);});
+  });
 }
-if(copyEncBtn && linkEncInput){
- copyEncBtn.addEventListener('click', function(){
-   navigator.clipboard.writeText(linkEncInput.value).then(function(){copyEncBtn.textContent='Copied!';setTimeout(function(){copyEncBtn.textContent='Copy Enc';},1200);});
- });
-}
+['copyOfferE','copyOfferK','copyOfferCombined','copyAcceptE','copyAcceptK','copyAcceptCombined','copyLinkAccept','copyLinkAcceptEnc'].forEach(setupCopy);
 sendBtn.addEventListener('click', function(){
  if(!chat.value.trim())return;
  addMsg('Me: '+chat.value,'me');
@@ -364,56 +512,59 @@ scanBtn.addEventListener('click', async function(){
  if(manualArea)manualArea.style.display='block';
  scanning=true;
  var scanWrap=document.getElementById('scanWrap');
- if(!scanWrap){
-   scanWrap=document.createElement('div');
-   scanWrap.id='scanWrap';
-   scanWrap.style.marginTop='12px';
-   document.getElementById('dialogInner').appendChild(scanWrap);
- }
- scanWrap.innerHTML='';
- video=document.createElement('video');
- video.autoplay=true;video.playsInline=true;video.muted=true;
- video.style.width='100%';video.style.borderRadius='12px';video.style.background='#000';
- scanWrap.appendChild(video);
+ if(!scanWrap){ scanWrap=document.createElement('div'); scanWrap.id='scanWrap'; scanWrap.style.marginTop='12px'; document.getElementById('dialogInner').appendChild(scanWrap); }
+ scanWrap.innerHTML=''; video=document.createElement('video'); video.autoplay=true;video.playsInline=true;video.muted=true; video.style.width='100%';video.style.borderRadius='12px';video.style.background='#000'; scanWrap.appendChild(video);
  try{
    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
-   video.srcObject=stream;
-   await video.play();
-   var sc=document.createElement('canvas');
-   var sctx=sc.getContext('2d',{willReadFrequently:true});
+   video.srcObject=stream; await video.play();
+   var sc=document.createElement('canvas'); var sctx=sc.getContext('2d',{willReadFrequently:true});
    async function tick(){
      if(!scanning)return;
-     sc.width=video.videoWidth;sc.height=video.videoHeight;
-     sctx.drawImage(video,0,0,sc.width,sc.height);
-     if(det){
-       try{
-         var codes=await det.detect(sc);
-         if(codes&&codes[0]){
-           var raw=codes[0].rawValue.trim();
-           await applyAccept(raw, false);
-           return;
-         }
-       }catch(e){}
-     }
+     sc.width=video.videoWidth;sc.height=video.videoHeight; sctx.drawImage(video,0,0,sc.width,sc.height);
+     if(det){ try{ var codes=await det.detect(sc); if(codes&&codes[0]){ var raw=codes[0].rawValue.trim(); await applyAccept(raw,false); return; } }catch(e){} }
      raf=requestAnimationFrame(tick);
-   }
-   tick();
- }catch(e){
-   scanWrap.innerHTML='<div style="color:#000;padding:20px">Camera failed: '+e+'</div>';
- }
+   } tick();
+ }catch(e){ scanWrap.innerHTML='<div style="color:#000;padding:20px">Camera failed: '+e+'</div>'; }
 });
-if(manualConfirm){
- manualConfirm.addEventListener('click', async function(){
-   var raw=manualInput.value.trim();
-   if(raw) await applyAccept(raw, false);
- });
+if(manualConfirm){ manualConfirm.addEventListener('click', async function(){ var raw=manualInput.value.trim(); if(raw) await applyAccept(raw,false); }); }
+if(pasteOfferBtn){
+  pasteOfferBtn.addEventListener('click', async function(){
+    var raw=pasteOfferInput.value.trim();
+    var eV=pasteOfferE.value.trim(); var kV=pasteOfferK.value.trim();
+    if(eV && kV){ await createAnswerFromAny(null, eV, kV); }
+    else if(raw){ await createAnswerFromAny(raw, null, null); }
+    else if(eV || kV){ addMsg('Need both e and k for AES creds','system'); }
+  });
 }
-(function handleAcceptUrlOnLoad(){
+if(pasteAcceptBtn){
+  pasteAcceptBtn.addEventListener('click', async function(){
+    var raw=pasteAcceptInput.value.trim();
+    var eV=pasteAcceptE.value.trim(); var kV=pasteAcceptK.value.trim();
+    var combined = eV && kV ? eV+'.'+kV : raw;
+    if(combined) await applyAccept(combined,false);
+  });
+}
+(function handleUrlOnLoad(){
   try{
     var acceptParam=extractAcceptFromCurrentUrl();
-    if(acceptParam){
-      addMsg('Found accept in URL, applying...', 'system');
-      setTimeout(async function(){ await applyAccept(acceptParam, true); }, 500);
+    if(acceptParam){ addMsg('Found accept in URL, applying...','system'); setTimeout(async function(){await applyAccept(acceptParam,true);},500); return; }
+    var url=new URL(location.href);
+    var inv=url.searchParams.get('invite');
+    var e=url.searchParams.get('e');
+    if(inv){
+      if(pasteOfferInput) pasteOfferInput.value=inv;
+      addMsg('Found invite in URL, generating accept...','system');
+      setTimeout(function(){ createAnswerFromAny(inv,null,null); },500);
+      return;
+    }
+    if(e){
+      var k=null; if(location.hash.includes('k=')){var hm=location.hash.match(/k=([^&]+)/); if(hm) k=decodeURIComponent(hm[1]);} if(!k) k=url.searchParams.get('k');
+      if(e&&k){
+        if(pasteOfferE) pasteOfferE.value=e; if(pasteOfferK) pasteOfferK.value=k;
+        if(pasteOfferInput) pasteOfferInput.value=e+'.'+k;
+        addMsg('Found AES creds in URL, generating accept...','system');
+        setTimeout(function(){ createAnswerFromAny(null,e,k); },500);
+      }
     }
   }catch(e){}
 })();
