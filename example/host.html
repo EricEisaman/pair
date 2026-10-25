@@ -1,5 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Host — WebRTC via QR</title><style>
-:root{--bg:#0a0a0b;--card:rgba(255,255,255,0.04);--card2:rgba(255,255,255,0.06);--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);--text:#fafafa;--muted:#a1a1aa;--muted2:#71717a;--white:#fff;--black:#0a0a0b;--input:#18181b}
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Host — WebRTC via QR + AES Link</title><style>:root{--bg:#0a0a0b;--card:rgba(255,255,255,0.04);--card2:rgba(255,255,255,0.06);--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);--text:#fafafa;--muted:#a1a1aa;--muted2:#71717a;--white:#fff;--black:#0a0a0b;--input:#18181b}
 *{box-sizing:border-box}html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,Inter,SF Pro Display,Segoe UI,Roboto,sans-serif}
 .shell{max-width:720px;margin:0 auto;padding:32px 20px 64px}
@@ -17,16 +16,20 @@ h1{font-size:34px;font-weight:650;letter-spacing:-0.03em;margin:0 0 10px}
 .status-dot[data-state="waiting"]{background:#3b82f6}
 .status-dot[data-state="connecting"]{background:#eab308}
 .status-dot[data-state="connected"]{background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.2)}
-#inviteButton{appearance:none;border:0;cursor:pointer;background:#fff;color:#000;font-size:14px;font-weight:600;padding:12px 20px;border-radius:9999px}
+.toggle{display:flex;background:#18181b;border:1px solid rgba(255,255,255,0.08);border-radius:9999px;padding:4px;gap:4px}
+.toggle button{flex:1;appearance:none;border:0;background:transparent;color:#71717a;padding:8px 14px;border-radius:9999px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
+.toggle button.active{background:#fff;color:#000;font-weight:600}
+#inviteButton,#generateButton{appearance:none;border:0;cursor:pointer;background:#fff;color:#000;font-size:14px;font-weight:600;padding:12px 20px;border-radius:9999px;margin-top:12px}
 .chat-row{display:flex;gap:10px;align-items:center;margin-bottom:16px}
 #chat{flex:1;background:#18181b;color:#fafafa;border:1px solid rgba(255,255,255,0.08);border-radius:9999px;padding:12px 16px}
+#inviteInput{width:100%;min-height:80px;background:#18181b;color:#fafafa;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px}
 #send{width:44px;height:44px;border-radius:9999px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.06);color:#fafafa}
 #messages{display:flex;flex-direction:column;gap:10px}
 #messages p{margin:0;padding:10px 14px;border-radius:16px;max-width:78%}
 #messages p.me{align-self:flex-end;background:#fff;color:#000;border-bottom-right-radius:6px}
 #messages p.peer{align-self:flex-start;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.08);border-bottom-left-radius:6px}
 #messages p.system{align-self:center;border:1px dashed rgba(255,255,255,0.08);color:#71717a;font-size:12px;font-family:ui-monospace;padding:6px 12px;border-radius:999px}
-dialog#dialog{background:#151517;color:#fafafa;border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:24px;max-width:380px;width:calc(100% - 32px);margin:auto}
+dialog#dialog{background:#151517;color:#fafafa;border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:24px;max-width:420px;width:calc(100% - 32px);margin:auto}
 dialog#dialog::backdrop{background:rgba(0,0,0,0.6);backdrop-filter:blur(12px)}
 .qr-wrap{background:#fff;padding:16px;border-radius:16px;display:flex;justify-content:center;min-height:312px}
 #qr{width:100%;max-width:280px;aspect-ratio:1;display:block;border-radius:8px}
@@ -34,10 +37,33 @@ dialog#dialog::backdrop{background:rgba(0,0,0,0.6);backdrop-filter:blur(12px)}
 #scanButton,#closeButton{flex:1;padding:11px 16px;border-radius:9999px;border:1px solid rgba(255,255,255,0.08);cursor:pointer}
 #scanButton{background:#fff;color:#000;font-weight:600}
 #closeButton{background:rgba(255,255,255,0.06);color:#fafafa}
-.dialog-hint{font-size:11px;color:#71717a;text-align:center;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px;margin-top:12px;font-family:ui-monospace}
+.dialog-hint{font-size:11px;color:#71717a;text-align:center;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px;margin-top:12px;font-family:ui-monospace;word-break:break-all}
+.link-row{display:flex;gap:8px;margin-top:12px}
+.link-row input{flex:1;background:#18181b;color:#fafafa;border:1px solid rgba(255,255,255,0.08);border-radius:9999px;padding:10px 14px;font-size:12px;font-family:ui-monospace}
+.link-row button{padding:10px 16px;border-radius:9999px;border:0;background:#fff;color:#000;font-weight:600;cursor:pointer}
 .footer{margin-top:28px;display:flex;justify-content:space-between;flex-wrap:wrap;font-size:11px;color:#71717a;font-family:ui-monospace}
-</style></head><body><div class="shell"><div class="eyebrow">WEBRTC / QR • P2P • HOST</div><h1>Host</h1><p class="desc">Serious local P2P. QR links to ericeisaman.github.io/pair/examples/join.html?invite=... No CDN.</p><div class="card card-pad" style="margin-bottom:16px"><div class="card-header"><div class="card-label">Invite</div><div class="status"><span class="status-dot" id="statusDot" data-state="idle"></span><span id="statusText">Idle</span></div></div><div class="invite-grid"><div><h3 style="margin:0 0 6px;font-size:15px">Start session</h3><p style="margin:0;color:#a1a1aa;font-size:13px">Real RTCPeerConnection offer</p></div><button id="inviteButton" type="button">Create invite</button></div></div><div class="card card-pad"><div class="card-header"><div class="card-label">Messages</div><div id="liveLabel" style="font-size:11px;color:#71717a;font-family:ui-monospace">Waiting</div></div><div class="chat-row"><input id="chat" placeholder="Not connected" disabled/><button id="send" type="button">Send</button></div><div id="messages"></div></div><div class="footer"><div>ICE: stun:stun.l.google.com:19302</div><div>ericeisaman.github.io/pair/examples/host.html</div></div></div><dialog id="dialog"><div><h2 id="h2">Invite</h2><div class="qr-wrap"><canvas id="qr" width="512" height="512"></canvas></div><div id="offerMeta" class="dialog-hint">P2P offer generated</div><div class="dialog-actions"><button id="scanButton">Scan accept</button><button id="closeButton">Close</button></div><div id="manualArea" style="display:none;margin-top:12px"><textarea id="manualInput" placeholder="Paste accept" style="width:100%;min-height:80px;background:#18181b;color:#fafafa;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px"></textarea><button id="manualConfirm" style="margin-top:8px;width:100%;padding:10px;border-radius:9999px;background:rgba(255,255,255,0.08);color:#fafafa;border:1px solid rgba(255,255,255,0.08)">Confirm</button></div></div></dialog><script>
-// QR Generator - Kazuhiko Arase MIT - inlined, no CDN
+</style></head><body><div class="shell"><div class="eyebrow">WEBRTC / QR • P2P • HOST • AES LINK FOR REMOTE</div><h1>Host</h1><p class="desc">Same-room = host only offline QR. Internet = STUN + share link across internet + AES encrypted link with key in #k fragment for remote folks.</p>
+<div class="card card-pad" style="margin-bottom:16px">
+  <div class="card-header"><div class="card-label">Mode</div><div class="status"><span class="status-dot" id="statusDot" data-state="idle"></span><span id="statusText">Idle</span></div></div>
+  <div class="toggle" style="margin-bottom:10px"><button id="modeSame" type="button">Same Room</button><button id="modeInternet" type="button" class="active">Internet (NAT)</button></div>
+  <div id="modeHint" style="font-size:11px;color:#71717a;font-family:ui-monospace;margin-bottom:14px">Internet: STUN • NAT traversal • share link + AES link</div>
+  <div class="invite-grid"><div><h3 style="margin:0 0 6px;font-size:15px">Start session</h3><p style="margin:0;color:#a1a1aa;font-size:13px">Choose mode then create invite</p></div><button id="inviteButton" type="button">Create invite</button></div>
+</div>
+<div class="card card-pad"><div class="card-header"><div class="card-label">Messages</div><div id="liveLabel" style="font-size:11px;color:#71717a;font-family:ui-monospace">Waiting</div></div><div class="chat-row"><input id="chat" placeholder="Not connected" disabled/><button id="send" type="button">Send</button></div><div id="messages"></div></div>
+<dialog id="dialog"><div id="dialogInner"><h2 id="h2">Invite</h2>
+<div id="qrWrapMain" class="qr-wrap"><canvas id="qr" width="512" height="512"></canvas></div>
+<div id="offerMeta" class="dialog-hint">P2P offer</div>
+<div class="link-row"><input id="shareLink" readonly placeholder="Shareable link (plain)"/><button id="copyLinkBtn" type="button">Copy</button></div>
+<div id="encSection" style="display:none;margin-top:18px;border-top:1px solid rgba(255,255,255,0.08);padding-top:16px">
+  <div style="font-size:11px;font-family:ui-monospace;letter-spacing:0.08em;text-transform:uppercase;color:#a1a1aa;margin-bottom:8px">Remote folks • AES Encrypted Link</div>
+  <div class="qr-wrap" style="margin-bottom:12px"><canvas id="qrEnc" width="512" height="512"></canvas></div>
+  <div class="dialog-hint" style="margin-bottom:8px">AES-GCM encrypted • key in #k= fragment • not sent to server • decrypts on join</div>
+  <div class="link-row"><input id="shareLinkEnc" readonly placeholder="AES encrypted link"/><button id="copyLinkEncBtn" type="button">Copy Enc</button></div>
+</div>
+<div class="dialog-actions" style="margin-top:16px"><button id="scanButton">Scan accept</button><button id="closeButton">Close</button></div>
+<div id="manualArea" style="display:none;margin-top:12px"><textarea id="manualInput" placeholder="Paste accept (raw or URL)" style="width:100%;min-height:80px;background:#18181b;color:#fafafa;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px"></textarea><button id="manualConfirm" style="margin-top:8px;width:100%;padding:10px;border-radius:9999px;background:rgba(255,255,255,0.08);color:#fafafa;border:1px solid rgba(255,255,255,0.08)">Confirm</button></div>
+</div></dialog>
+<div class="footer"><div>ICE toggle + AES-GCM • rounded 20px • no CDN</div><div>ericeisaman.github.io/pair/examples/host.html</div></div></div><script>// QR Generator - Kazuhiko Arase MIT - inlined, no CDN
 (function(){
 var QRUtil={PATTERN_POSITION_TABLE:[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,84,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],G15:1335,G18:7973,G15_MASK:21522,getBCHTypeInfo:function(d){var e=d<<10;while(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G15)>=0)e^=(QRUtil.G15<<(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G15)));return((d<<10)|e)^QRUtil.G15_MASK},getBCHTypeNumber:function(d){var e=d<<12;while(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G18)>=0)e^=(QRUtil.G18<<(QRUtil.getBCHDigit(e)-QRUtil.getBCHDigit(QRUtil.G18)));return(d<<12)|e},getBCHDigit:function(d){var e=0;while(d!=0){e++;d>>>=1}return e},getPatternPosition:function(t,n){return QRUtil.PATTERN_POSITION_TABLE[t-1][n]},getMask:function(t,i,j){switch(t){case 0:return(i+j)%2==0;case 1:return i%2==0;case 2:return j%3==0;case 3:return(i+j)%3==0;case 4:return(Math.floor(i/2)+Math.floor(j/3))%2==0;case 5:return(i*j)%2+(i*j)%3==0;case 6:return((i*j)%2+(i*j)%3)%2==0;case 7:return((i*j)%3+(i+j)%2)%2==0;default:throw new Error("bad")}},getErrorCorrectPolynomial:function(e){var a=new QRPolynomial([1],0);for(var i=0;i<e;i++)a=a.multiply(new QRPolynomial([1,QRMath.gexp(i)],0));return a},getLengthInBits:function(t,e){return e<10?8:16},getLostPoint:function(t){var n=t.getModuleCount(),e=0;for(var r=0;r<n;r++)for(var o=0;o<n;o++){var l=0,s=t.isDark(r,o);for(var u=-1;u<=1;u++)if(!(r+u<0||n<=r+u))for(var a=-1;a<=1;a++)if(!(o+a<0||n<=o+a)&&(u!=0||a!=0)&&s==t.isDark(r+u,o+a))l++;l>5&&(e+=3+l-5)}for(var r=0;r<n-1;r++)for(var o=0;o<n-1;o++){var c=0;t.isDark(r,o)&&c++;t.isDark(r+1,o)&&c++;t.isDark(r,o+1)&&c++;t.isDark(r+1,o+1)&&c++;(c==0||c==4)&&(e+=3)}for(var r=0;r<n;r++)for(var o=0;o<n-6;o++)t.isDark(r,o)&&!t.isDark(r,o+1)&&t.isDark(r,o+2)&&t.isDark(r,o+3)&&t.isDark(r,o+4)&&!t.isDark(r,o+5)&&t.isDark(r,o+6)&&(e+=40);for(var o=0;o<n;o++)for(var r=0;r<n-6;r++)t.isDark(r,o)&&!t.isDark(r+1,o)&&t.isDark(r+2,o)&&t.isDark(r+3,o)&&t.isDark(r+4,o)&&!t.isDark(r+5,o)&&t.isDark(r+6,o)&&(e+=40);var h=0;for(var o=0;o<n;o++)for(var r=0;r<n;r++)t.isDark(r,o)&&h++;return e+10*Math.abs(100*h/n/n-50)/5}};
 var QRMath={glog:function(n){return QRMath.LOG_TABLE[n]},gexp:function(n){while(n<0)n+=255;while(n>=256)n-=255;return QRMath.EXP_TABLE[n]},EXP_TABLE:new Array(256),LOG_TABLE:new Array(256)};for(var i=0;i<8;i++)QRMath.EXP_TABLE[i]=1<<i;for(var i=8;i<256;i++)QRMath.EXP_TABLE[i]=QRMath.EXP_TABLE[i-4]^QRMath.EXP_TABLE[i-5]^QRMath.EXP_TABLE[i-6]^QRMath.EXP_TABLE[i-8];for(var i=0;i<255;i++)QRMath.LOG_TABLE[QRMath.EXP_TABLE[i]]=i;
@@ -65,13 +91,19 @@ function drawQRToCanvas(c,txt){
   ctx.fillStyle='#000';
   for(var r=0;r<cnt;r++)for(var cc=0;cc<cnt;cc++)if(m.isDark(r,cc))ctx.fillRect(mar+cc*cell,mar+r*cell,Math.ceil(cell),Math.ceil(cell));
 }
-const CONFIG={iceServers:[{urls:"stun:stun.l.google.com:19302"}]};
+let currentMode='internet';
+function getConfig(){
+  if(currentMode==='same-room') return {iceServers:[]};
+  return {iceServers:[{urls:"stun:stun.l.google.com:19302"}]};
+}
+let CONFIG=getConfig();
 const dot=document.getElementById('statusDot');
 const st=document.getElementById('statusText');
 const live=document.getElementById('liveLabel');
 const inviteBtn=document.getElementById('inviteButton');
 const dialog=document.getElementById('dialog');
 const qr=document.getElementById('qr');
+const qrEnc=document.getElementById('qrEnc');
 const scanBtn=document.getElementById('scanButton');
 const closeBtn=document.getElementById('closeButton');
 const chat=document.getElementById('chat');
@@ -81,34 +113,64 @@ const manualArea=document.getElementById('manualArea');
 const manualInput=document.getElementById('manualInput');
 const manualConfirm=document.getElementById('manualConfirm');
 const meta=document.getElementById('offerMeta');
+const linkInput=document.getElementById('shareLink');
+const linkEncInput=document.getElementById('shareLinkEnc');
+const copyBtn=document.getElementById('copyLinkBtn');
+const copyEncBtn=document.getElementById('copyLinkEncBtn');
+const modeSame=document.getElementById('modeSame');
+const modeInternet=document.getElementById('modeInternet');
+function setMode(m){
+  currentMode=m;
+  CONFIG=getConfig();
+  modeSame.classList.toggle('active', m==='same-room');
+  modeInternet.classList.toggle('active', m==='internet');
+  document.getElementById('modeHint').textContent = m==='same-room' ? 'Same-room: host candidates only • offline • fastest • QR' : 'Internet: STUN + AES encrypted link • share link across internet • QR also works';
+}
+modeSame.addEventListener('click', function(){setMode('same-room');});
+modeInternet.addEventListener('click', function(){setMode('internet');});
+setMode('internet');
 function setStatus(s,t){dot.dataset.state=s;st.textContent=t;}
-function addMsg(t,c){var p=document.createElement('p');p.className=c||'peer';p.textContent=t;msgs.appendChild(p);}
+function addMsg(t,c){var p=document.createElement('p');p.className=c||'peer';p.textContent=t;msgs.appendChild(p);msgs.scrollTop=msgs.scrollHeight;}
 function enc(o){return btoa(JSON.stringify(o));}
 function dec(s){return JSON.parse(atob(s));}
-let pc=null,sendCh=null,recvCh=null,stream=null,video=null,det=null,raf=null,scanning=false;
+// --- AES helpers for remote folks ---
+function bytesToB64Url(bytes){
+  let binary='';
+  for(let i=0;i<bytes.length;i++) binary+=String.fromCharCode(bytes[i]);
+  return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function b64UrlToBytes(b64url){
+  b64url=b64url.replace(/-/g,'+').replace(/_/g,'/');
+  while(b64url.length%4) b64url+='=';
+  let binary=atob(b64url);
+  let bytes=new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
+  return bytes;
+}
+async function encryptOfferJson(jsonStr){
+  // jsonStr = JSON.stringify(offer)
+  const key=await crypto.subtle.generateKey({name:"AES-GCM", length:256}, true, ["encrypt","decrypt"]);
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const data=new TextEncoder().encode(jsonStr);
+  const ct=await crypto.subtle.encrypt({name:"AES-GCM", iv}, key, data);
+  const rawKey=await crypto.subtle.exportKey("raw", key);
+  const combined=new Uint8Array(iv.length + ct.byteLength);
+  combined.set(iv,0);
+  combined.set(new Uint8Array(ct), iv.length);
+  return {
+    e: bytesToB64Url(combined),
+    k: bytesToB64Url(new Uint8Array(rawKey))
+  };
+}
+let pc=null,sendCh=null,recvCh=null,stream=null,video=null,det=null,raf=null,scanning=false,lastOfferJson=null;
 if('BarcodeDetector' in window){try{det=new BarcodeDetector({formats:['qr_code']});}catch(e){}}
 async function createInvite(){
  if(pc){try{pc.close();}catch(e){}}
  pc=new RTCPeerConnection(CONFIG);
  sendCh=pc.createDataChannel('fromhost');
- sendCh.onopen=function(){
-   setStatus('connected','Connected');
-   live.textContent='Live';
-   addMsg('Connected successfully @ '+Date.now(),'system');
-   chat.disabled=false;
- };
- pc.onconnectionstatechange=function(){
-   st.textContent=pc.connectionState;
-   if(pc.connectionState==='connected')setStatus('connected','Connected');
- };
- pc.ondatachannel=function(e){
-   recvCh=e.channel;
-   recvCh.onmessage=function(ev){
-     try{var m=JSON.parse(ev.data);addMsg(m.user+': '+m.text,'peer');}catch(_){addMsg(ev.data,'peer');}
-   };
-   chat.disabled=false;
-   live.textContent='Live';
- };
+ sendCh.onopen=function(){setStatus('connected','Connected');live.textContent='Live';addMsg('Connected successfully @ '+Date.now(),'system');chat.disabled=false;};
+ pc.onconnectionstatechange=function(){st.textContent=pc.connectionState;if(pc.connectionState==='connected')setStatus('connected','Connected');};
+ pc.ondatachannel=function(e){recvCh=e.channel;recvCh.onmessage=function(ev){try{var m=JSON.parse(ev.data);addMsg(m.user+': '+m.text,'peer');}catch(_){addMsg(ev.data,'peer');}};chat.disabled=false;live.textContent='Live';};
  const offer=await pc.createOffer();
  await pc.setLocalDescription(offer);
  await new Promise(function(r){
@@ -118,16 +180,47 @@ async function createInvite(){
    pc.addEventListener('icecandidate',function(ev){if(!ev.candidate&&!done){done=true;clearTimeout(to);r();}});
    pc.addEventListener('icegatheringstatechange',function(){if(pc.iceGatheringState==='complete'&&!done){done=true;clearTimeout(to);r();}});
  });
+ lastOfferJson=JSON.stringify(pc.localDescription);
  return enc(pc.localDescription);
+}
+function buildJoinUrl(inv){
+  if(currentMode==='internet'){
+    return 'https://ericeisaman.github.io/pair/examples/join.html?invite='+encodeURIComponent(inv);
+  }else{
+    try{
+      var base=new URL('join.html', location.href);
+      return base.toString()+'?invite='+encodeURIComponent(inv);
+    }catch(e){
+      return 'join.html?invite='+encodeURIComponent(inv);
+    }
+  }
+}
+function buildJoinUrlEnc(e,k){
+  // Remote folks: AES encoded link with key in fragment for privacy (fragment not sent to server)
+  // Format: join.html?e=ENCRYPTED#k=KEY
+  // Also support ?e=&k= for copy-paste simplicity
+  let baseUrl = currentMode==='internet' ? 'https://ericeisaman.github.io/pair/examples/join.html' : (function(){try{return new URL('join.html', location.href).toString();}catch(e){return 'join.html';}})();
+  return baseUrl+'?e='+encodeURIComponent(e)+'#k='+encodeURIComponent(k);
 }
 inviteBtn.addEventListener('click', async function(){
  try{
    setStatus('creating','Creating...');
    inviteBtn.disabled=true;
    var inv=await createInvite();
-   var joinUrl='https://ericeisaman.github.io/pair/examples/join.html?invite='+encodeURIComponent(inv);
+   var joinUrl=buildJoinUrl(inv);
    drawQRToCanvas(qr, joinUrl);
-   meta.textContent='P2P offer • '+joinUrl.slice(0,70)+'... • '+new Date().toLocaleTimeString();
+   if(linkInput) linkInput.value=joinUrl;
+   meta.textContent = currentMode==='same-room' ? 'Same-room • host only • '+new Date().toLocaleTimeString() : 'Internet • STUN • '+new Date().toLocaleTimeString();
+   // AES encrypted for remote folks
+   try{
+     var encPair=await encryptOfferJson(lastOfferJson);
+     var encUrl=buildJoinUrlEnc(encPair.e, encPair.k);
+     if(linkEncInput) linkEncInput.value=encUrl;
+     if(qrEnc) drawQRToCanvas(qrEnc, encUrl);
+     document.getElementById('encSection').style.display='block';
+   }catch(e){
+     console.error('AES encrypt failed', e);
+   }
    dialog.showModal();
    setStatus('waiting','Waiting for scan');
    if(manualArea)manualArea.style.display='none';
@@ -137,11 +230,17 @@ inviteBtn.addEventListener('click', async function(){
    inviteBtn.disabled=false;
  }
 });
-closeBtn.addEventListener('click', function(){
- dialog.close();
- setStatus('idle','Idle');
- inviteBtn.disabled=false;
-});
+closeBtn.addEventListener('click', function(){dialog.close();setStatus('idle','Idle');inviteBtn.disabled=false;});
+if(copyBtn && linkInput){
+ copyBtn.addEventListener('click', function(){
+   navigator.clipboard.writeText(linkInput.value).then(function(){copyBtn.textContent='Copied!';setTimeout(function(){copyBtn.textContent='Copy';},1200);});
+ });
+}
+if(copyEncBtn && linkEncInput){
+ copyEncBtn.addEventListener('click', function(){
+   navigator.clipboard.writeText(linkEncInput.value).then(function(){copyEncBtn.textContent='Copied!';setTimeout(function(){copyEncBtn.textContent='Copy Enc';},1200);});
+ });
+}
 sendBtn.addEventListener('click', function(){
  if(!chat.value.trim())return;
  addMsg('Me: '+chat.value,'me');
@@ -153,12 +252,21 @@ chat.addEventListener('keydown', function(e){if(e.key==='Enter'){sendBtn.click()
 scanBtn.addEventListener('click', async function(){
  if(manualArea)manualArea.style.display='block';
  scanning=true;
- var wrap=document.querySelector('.qr-wrap');
- wrap.innerHTML='';
+ var wrap=document.querySelector('#qrWrapMain');
+ if(!wrap) wrap=document.querySelector('.qr-wrap');
+ // keep both QRs visible, but for scanning we reuse main wrap
+ var scanWrap=document.getElementById('scanWrap');
+ if(!scanWrap){
+   scanWrap=document.createElement('div');
+   scanWrap.id='scanWrap';
+   scanWrap.style.marginTop='12px';
+   document.getElementById('dialogInner').appendChild(scanWrap);
+ }
+ scanWrap.innerHTML='';
  video=document.createElement('video');
  video.autoplay=true;video.playsInline=true;video.muted=true;
  video.style.width='100%';video.style.borderRadius='12px';video.style.background='#000';
- wrap.appendChild(video);
+ scanWrap.appendChild(video);
  try{
    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
    video.srcObject=stream;
@@ -173,13 +281,17 @@ scanBtn.addEventListener('click', async function(){
        try{
          var codes=await det.detect(sc);
          if(codes&&codes[0]){
-           var desc=dec(codes[0].rawValue.trim());
+           var raw=codes[0].rawValue.trim();
+           var acceptStr=raw;
+           try{var u=new URL(raw);var a=u.searchParams.get('accept');if(a)acceptStr=a;}catch(e){if(raw.includes('accept=')){var mm=raw.match(/accept=([^&]+)/);if(mm)acceptStr=decodeURIComponent(mm[1]);}}
+           var desc=dec(acceptStr);
            await pc.setRemoteDescription(desc);
            scanning=false;
            dialog.close();
            if(video){video.pause();video.srcObject=null;}
            if(stream){stream.getTracks().forEach(function(t){t.stop();});}
            setStatus('connected','Connected');
+           if(scanWrap) scanWrap.innerHTML='';
            return;
          }
        }catch(e){}
@@ -188,13 +300,16 @@ scanBtn.addEventListener('click', async function(){
    }
    tick();
  }catch(e){
-   wrap.innerHTML='<div style="color:#000;padding:20px">Camera failed: '+e+'</div>';
+   scanWrap.innerHTML='<div style="color:#000;padding:20px">Camera failed: '+e+'</div>';
  }
 });
 if(manualConfirm){
  manualConfirm.addEventListener('click', async function(){
    try{
-     var d=dec(manualInput.value.trim());
+     var raw=manualInput.value.trim();
+     var acceptStr=raw;
+     try{var u=new URL(raw);var a=u.searchParams.get('accept');if(a)acceptStr=a;}catch(e){if(raw.includes('accept=')){var mm=raw.match(/accept=([^&]+)/);if(mm)acceptStr=decodeURIComponent(mm[1]);}}
+     var d=dec(acceptStr);
      await pc.setRemoteDescription(d);
      scanning=false;
      dialog.close();
