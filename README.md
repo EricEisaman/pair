@@ -158,7 +158,7 @@ Canonical hosted:
 - Host: https://ericeisaman.github.io/pair/example/host.html
 - Join: https://ericeisaman.github.io/pair/example/join.html?invite=...
 
-Demo (keep dammit): https://ericeisaman.github.io/pair/example/host.html
+Demo : https://ericeisaman.github.io/pair/example/host.html
 
 ---
 
